@@ -1,0 +1,930 @@
+import os
+import shutil
+
+from flask import Flask, render_template, request, jsonify, make_response, send_file
+from flask_migrate import Migrate
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_cors import CORS
+import jwt
+import datetime
+from functools import wraps
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import  FileStorage
+import random
+import string
+import hashlib
+import json
+from models import db, User, Formation, Affectation, Groupe, RessourceStat, RessourceText, RessourceQestions, \
+    Evaluation, Module, Question, Media, ReponseEvaluation
+
+app = Flask(__name__)
+app.config['CORS_HEADERS'] = '*'
+
+CORS(app, origins="*", allow_headers="*")
+app.config['SECRET_KEY'] = 'thisissecret'
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:azerty@localhost:5432/flask2"
+app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+ALLOWED_EXTENSIONS = {'txt', 'doc', 'dox', 'jpg', 'jpeg', 'png', 'xls', 'xlsx', 'zip', 'rar', 'csv'}
+
+db.init_app(app)
+migrate = Migrate(app, db)
+
+@app.route('/')
+def home():
+    return "[/configuration pour une premiere utilisation]"
+
+#----------------------------------------- SECURITY ------------------------------
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        if 'x-access-token' in request.headers:
+            token = request.headers['x-access-token']
+
+        print(token)
+        if not token:
+            return jsonify({'message' : 'Token is missing!'}), 401
+
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'],algorithms=["HS256"])
+            print(data)
+            current_user = User.query.filter_by(id=data['id']).first()
+        except  Exception as exc:
+            print(exc)
+            return jsonify({'message' : 'Token is invalid!'}), 401
+
+        return f(current_user, *args, **kwargs)
+
+    return decorated
+@app.route('/login')
+def login():
+    auth = request.authorization
+
+    if not auth or not auth.username or not auth.password:
+        return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
+
+    user = User.query.filter_by(mail=auth.username).first()
+
+    if not user:
+        return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
+
+    if check_password_hash(user.password, auth.password):
+        token = jwt.encode({'id' : user.id, 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=60)}, app.config['SECRET_KEY'],algorithm="HS256")
+
+        print("log",token,user.rank)
+        try:
+            token = token.decode()
+        except:
+            print("error decode")
+        return jsonify({'token' : token, 'rank':user.rank, 'id':user.id})
+
+    return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
+
+
+#----------------------------------------- FORMATION -------------------------
+@app.route('/formations', methods=['GET'])
+def get_all_formation():
+    formations = Formation.query.all()
+    output = []
+    for f in formations:
+        output.append(f.serialize())
+
+    return jsonify({'formations' : output})
+
+@app.route('/evaluation/correction', methods=['POST'])
+@token_required
+def ressource_evaluation_correction(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    print(current_user, request.json)
+    reponses = request.json.get("dataReponse")
+    noteVF=0
+    if reponses is not None:
+        if "reponse" in reponses.keys():
+            for r in reponses["reponse"]:
+                rep = ReponseEvaluation.query.filter_by(id=r["id"]).first()
+                if "note" in r.keys():
+                    if r["note"] is not None:
+                        rep.note = r["note"]
+                        noteVF+=float(r["note"])
+                        db.session.commit()
+        eval = Evaluation.query.filter_by(id=reponses["id"]).first()
+        if eval is not None:
+            if eval.barem_total is not None:
+                eval.note = min(noteVF,eval.barem_total)
+            else:
+                eval.note = noteVF
+            db.session.commit()
+
+    return jsonify({})
+
+
+@app.route('/evaluation/participation', methods=['POST'])
+@token_required
+def ressource_evaluation_participation(current_user):
+    print(current_user,request.json)
+
+    eval = Evaluation(id_ressourceqestions=request.json.get("ressource")["id"])
+    eval.id_user=current_user.id
+    eval.id_module=request.json.get("ressource")["id_module"]
+    eval.date_eval= datetime.datetime.now().timestamp()
+    db.session.add(eval)
+    db.session.commit()
+
+    for q in request.json.get("questionList"):
+        rep = ReponseEvaluation(id_eval=eval.id)
+        rep.id_user = current_user.id
+        rep.id_question=q["id"]
+        rep.type=q["type"]
+        if q["type"]==0 or q["type"]==1:
+            rep.reponse = q["reponseuser"]
+        if q["type"]==2:
+            rep.reponse = 'ยง'.join(["1" if i else "0" for i in q["tabRep"]])
+        if q["type"]==3 :
+            rep.reponse = 'ยง'.join([str(i) for i in q["tabRep"]])
+        if q["type"]==4 and "media" in q.keys():
+            rep.reponse = q["media"]
+        db.session.add(rep)
+        db.session.commit()
+
+
+
+    return jsonify({"message":"ok"})
+
+
+
+@app.route('/ressource/evaluation/<int:id>', methods=['GET'])
+@token_required
+def get_ressource_evaluation(current_user,id):
+    print(current_user)
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    eval = Evaluation.query.filter_by(id_module=id).all()
+    data={}
+    for e in eval:
+        es = e.serialize()
+
+        user = User.query.filter_by(id=e.id_user).first()
+        es["user"]=user.serialize()
+        reponses = ReponseEvaluation.query.filter_by(id_user=user.id,id_eval=e.id).all()
+        repData=[]
+        for r in reponses:
+            repData.append(r.serialize())
+        es["reponse"]=repData
+        if e.id_ressourceqestions in data.keys():
+            data[e.id_ressourceqestions]["data"].append(es)
+        else:
+            ressource = RessourceQestions.query.filter_by(id=e.id_ressourceqestions).first()
+            rs = ressource.serialize()
+            questions = Question.query.filter_by(id_ressourceqestions=e.id_ressourceqestions).all()
+            questData=[]
+            for q in questions:
+                questData.append(q.serialize())
+            rs["questions"]=questData
+            data[e.id_ressourceqestions]={"ressource":rs,"data":[es]}
+    print("data",data)
+
+    return jsonify(data)
+
+
+@app.route('/ressource/evaluation/registration', methods=['POST'])
+@token_required
+def ressource_evaluation_registration(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    print(request.json)
+    id_owner = current_user.id
+    id_module = request.json.get('module')["id"]
+    groupes = str(request.json.get('data')['groupes'])
+    titre = request.json.get('data')['titre']["value"]
+    type = int(request.json.get('type'))
+    dateO = request.json.get('data')["dateO"]
+    dateF = request.json.get('data')["dateF"]
+
+    if id_module is None or titre is None :
+        return make_response('Could not verify', 200, {'Error': 'parameters missing'})
+    if type > 3:
+        ressource = RessourceQestions(id_owner=id_owner)
+        ressource.id_module = id_module
+        ressource.groupes = groupes
+        ressource.type = type
+        ressource.titre = titre
+        ressource.dateO = dateO
+        ressource.dateF = dateF
+        ressource.questionAleatoire = bool(request.json.get('questionAleatoire'))
+        ressource.nbQuestion = request.json.get('nbQuestion')
+        db.session.add(ressource)
+        db.session.commit()
+        keysList = request.json.keys()
+        print(keysList)
+        if "questionList" in keysList:
+            qList = request.json.get('questionList')
+            for q in  qList:
+                keysListquestion = q.keys()
+                question = Question(id_ressourceqestions=ressource.id)
+                question.question = q["question"]
+                question.type=q["type"]
+                question.order = q["id"]
+                question.reponse = q["reponse"]
+                question.indice = q["indice"]
+                question.barem = q["barem"]
+                question.rating = q["rating"]
+                question.requis = q["Requis"]
+                if "formats" in keysListquestion:
+                    question.formats = q["formats"]
+                if "size" in keysListquestion:
+                    question.size = q["size"]
+                if "choix" in keysListquestion:
+                    question.choix = q["choix"]
+                db.session.add(question)
+                db.session.commit()
+    return jsonify(ressource.serialize())
+
+
+
+@app.route('/ressources/notes/<int:id>', methods=['GET'])
+@token_required
+def get_ressource_notes(current_user,id):
+    eval = Evaluation.query.order_by(Evaluation.date_eval.asc()).filter_by(id_user=current_user.id,id_module=id).all()
+    data=[]
+    for e in eval:
+        data.append(e.serialize())
+
+    return jsonify(data)
+
+
+@app.route('/ressources/stat/<int:id>/<int:limit>', methods=['GET'])
+@token_required
+def get_ressource_stats(current_user,id,limit):
+    stats = RessourceStat.query.filter_by(id_user=current_user.id,id_module=id).all()
+    data=[]
+    eval=[]
+    for s in stats[:min(limit,len(stats))]:
+        ss = s.serialize()
+
+        if s.type_ressource <= 3:
+            ressource = RessourceText.query.filter_by(id=s.id_ressource).first()
+        else:
+            ressource = RessourceQestions.query.filter_by(id=s.id_ressource).first()
+            eval = Evaluation.query.filter(Evaluation.date_eval>=s.dateO,Evaluation.date_eval<=s.dateF, Evaluation.id_ressourceqestions==ressource.id,Evaluation.id_user==current_user.id,).first()
+            if eval is not None:
+                if eval.note is not None:
+                    ss["eval"]=eval.serialize()
+        ss["titre"] = ressource.titre
+        data.append(ss)
+
+    data.sort(key=lambda x: x["dateO"], reverse=True)
+
+    return jsonify(data)
+
+@app.route('/ressources/stat', methods=['POST'])
+@token_required
+def recode_stat(current_user):
+    print(request.json)
+    r = RessourceStat(id_ressource=request.json.get("data")["id"])
+    r.id_user=current_user.id
+    r.dateO=request.json.get("startTime")
+    r.dateF = request.json.get("endTime")
+    r.type_ressource=request.json.get("data")["type"]
+    r.id_module=request.json.get("data")["id_module"]
+    db.session.add(r)
+    db.session.commit()
+    return jsonify({})
+
+@app.route('/ressources/groupe/<int:id>', methods=['GET'])
+@token_required
+def get_ressource_groupe(current_user,id):
+    data = []
+    ressources = RessourceText.query.filter_by(id_owner=current_user.id).all()
+    for r in ressources:
+        rs = r.serialize()
+        rs["module"] = "undefined"
+        m = Module.query.filter_by(id=r.id_module).first()
+        if m is not None:
+            rs["module"] = m.name
+
+        groupes=json.loads(r.groupes)
+        add=False
+        for g in groupes:
+            if g["id"]==current_user.groupe:
+                add=True
+
+        if add:
+            data.append(rs)
+
+    ressources = RessourceQestions.query.filter_by(id_owner=current_user.id).all()
+    for r in ressources:
+        rs = r.serialize()
+        rs["module"] = "undefined"
+        m = Module.query.filter_by(id=r.id_module).first()
+        questions = Question.query.filter_by(id_ressourceqestions=r.id).all()
+        content = []
+        for q in questions:
+            content.append(q.serialize())
+        rs["content"] = content
+        if m is not None:
+            rs["module"] = m.name
+
+        groupes = json.loads(r.groupes)
+        add = False
+        for g in groupes:
+            if g["id"] == current_user.groupe:
+                add = True
+
+        if add:
+            data.append(rs)
+    print(data)
+    return jsonify(data)
+
+@app.route('/mesressources', methods=['GET'])
+@token_required
+def get_ressource(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    data=[]
+    ressources = RessourceText.query.filter_by(id_owner=current_user.id).all()
+    for r in ressources:
+        rs = r.serialize()
+        rs["module"] = "undefined"
+        m = Module.query.filter_by(id=r.id_module).first()
+        if m is not None:
+            rs["module"] = m.name
+        data.append(rs)
+
+    ressources = RessourceQestions.query.filter_by(id_owner=current_user.id).all()
+    for r in ressources:
+        rs = r.serialize()
+        rs["module"] ="undefined"
+        m=Module.query.filter_by(id=r.id_module).first()
+        questions=Question.query.filter_by(id_ressourceqestions=r.id).all()
+        content=[]
+        for q in questions:
+            content.append(q.serialize())
+        rs["content"]=content
+        if m is not None:
+            rs["module"]=m.name
+
+        data.append(rs)
+    print(data)
+    return jsonify(data)
+
+@app.route('/ressources/<int:id>', methods=['GET'])
+@token_required
+def get_ressource_module(current_user,id):
+
+    data=[]
+    ressources = RessourceText.query.filter_by(id_module=id).all()
+    for r in ressources:
+        rs = r.serialize()
+        rs["module"] = "undefined"
+        m = Module.query.filter_by(id=r.id_module).first()
+        if m is not None:
+            rs["module"] = m.name
+        res = json.loads(rs["groupes"].replace("\'", "\""))
+
+        find = False
+        for g in res:
+            if current_user.rank == 0 or g["id"] in current_user.groupe.split(";") :
+                for d in data:
+                    if d["id"] == rs["id"]:
+                        find = True
+
+        if not find:
+            print("groupe add")
+            data.append(rs)
+
+    ressources = RessourceQestions.query.filter_by(id_module=id).all()
+    for r in ressources:
+        rs = r.serialize()
+        rs["module"] ="undefined"
+        m=Module.query.filter_by(id=r.id_module).first()
+        questions=Question.query.order_by(Question.order.asc()).filter_by(id_ressourceqestions=r.id).all()
+        content=[]
+        for q in questions:
+            content.append(q.serialize())
+        rs["content"]=content
+        if m is not None:
+            rs["module"]=m.name
+
+        res = json.loads(rs["groupes"].replace("\'", "\""))
+
+        for g in res:
+            if current_user.rank==0 or g["id"] in current_user.groupe.split(";") :
+                find=False
+                for d in data:
+                    if d["id"]==rs["id"]:
+                        find=True
+
+        if not find:
+            print("groupe add")
+            data.append(rs)
+
+    print("data",data)
+    return jsonify(data)
+
+
+
+@app.route('/ressource/del/<int:code>/<int:id>', methods=['DELETE'])
+@token_required
+def del_ressource(current_user,code,id):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+    if code<=3:
+        ressource=RessourceText.query.filter_by(id=id,id_owner=current_user.id).delete()
+    else:
+        ressource=RessourceQestions.query.filter_by(id=id,id_owner=current_user.id).delete()
+
+    print(ressource)
+    db.session.commit()
+
+    return jsonify({"id":id})
+
+
+@app.route('/ressource/registration', methods=['POST'])
+@token_required
+def ressource_registration(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+    print(request.json)
+    id_owner = current_user.id
+    id_module = request.json.get('module')["id"]
+    groupes = str(request.json.get('data')['groupes'])
+    titre = request.json.get('data')['titre']["value"]
+    type = int(request.json.get('type'))
+    content = request.json.get('text')
+    dateO = request.json.get('data')["dateO"]
+    dateF = request.json.get('data')["dateF"]
+
+    if id_module is None or titre is None or content is None:
+        return make_response('Could not verify', 200, {'Error': 'parameters missing'})
+    if type <= 3:
+        ressource = RessourceText(id_owner=id_owner)
+        ressource.id_module=id_module
+        ressource.groupes=groupes
+        ressource.type=type
+        ressource.titre=titre
+        ressource.content = content
+        ressource.dateO=dateO
+        ressource.dateF=dateF
+        db.session.add(ressource)
+        db.session.commit()
+
+        print(ressource.serialize())
+
+        return jsonify(ressource.serialize())
+
+    return jsonify({})
+
+
+
+@app.route('/ressource/evaluation/edit', methods=['POST'])
+@token_required
+def ressource_edit_eval(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+    print(request.json)
+    id_ressourceQ = request.json.get('ressourceIdEdition')["idRessource"]
+    ressource = RessourceQestions.query.filter_by(id_owner=current_user.id,id=id_ressourceQ).first()
+    if ressource is not None:
+        ressource.groupes = str(request.json.get('data')['groupes'])
+        ressource.type = int(request.json.get('type'))
+        ressource.titre = request.json.get('data')['titre']["value"]
+        ressource.dateO = request.json.get('data')["dateO"]
+        ressource.dateF = request.json.get('data')["dateF"]
+        ressource.questionAleatoire = bool(request.json.get('questionAleatoire'))
+        ressource.nbQuestion = request.json.get('nbQuestion')
+        db.session.commit()
+        keysList = request.json.keys()
+        print(keysList)
+        questionList=Question.query.filter_by(id_ressourceqestions=ressource.id).all()
+
+
+
+
+
+
+    return jsonify({})
+
+
+@app.route('/ressource/edit', methods=['POST'])
+@token_required
+def ressource_edit(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+    print(request.json)
+    id_ressourcetxt = request.json.get('ressourceIdEdition')["idRessource"]
+    print(id_ressourcetxt)
+    ressources = RessourceText.query.filter_by(id_owner=current_user.id,id=id_ressourcetxt).first()
+
+    if ressources is not None:
+        ressources.titre=request.json.get('data')['titre']["value"]
+        ressources.groupes=str(request.json.get('data')['groupes'])
+        ressources.type = int(request.json.get('type'))
+        ressources.content = request.json.get('text')
+        ressources.dateO = request.json.get('data')["dateO"]
+        ressources.dateF = request.json.get('data')["dateF"]
+        db.session.commit()
+        return jsonify(ressources.serialize())
+
+    return jsonify({})
+
+
+@app.route('/formation/registration', methods=['POST'])
+@token_required
+def formation_registration(current_user):
+    if current_user.rank!=0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    else :
+        name = request.json.get('name')
+        formations = Formation.query.filter_by(name=name).first()
+        if formations is None:
+            f = Formation(name=name)
+            db.session.add(f)
+            db.session.commit()
+        else:
+            f=formations.serialize()
+        return jsonify(f.serialize())
+
+
+
+#----------------------------------------- FORMATION -------------------------
+
+@app.route('/groupes/module/<int:id>', methods=['GET'])
+@token_required
+def get_all_groupes_module(current_user,id):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+    affectation = Affectation.query.filter_by(id_module=id).all()
+    output = []
+    for a in affectation:
+        item={}
+        groupe = Groupe.query.filter_by(id=a.id_groupe).first()
+        users = User.query.all()
+        userData=[]
+        for u in users:
+            if u.groupe is not None:
+                if a.id_groupe in u.groupe.split(";"):
+                    userData.append(u.serialize())
+        item["users"]=userData
+        item["groupe"]=groupe.serialize()
+        item["affectation"]=a.serialize()
+        output.append(item)
+
+    return jsonify(output)
+
+
+
+@app.route('/groupe/affectation', methods=['POST'])
+@token_required
+def groupe_affectation_user(current_user):
+    print("groupe_affectation_user")
+    print("r",request.json)
+    if request.json.get('code') is not None:
+        ref = request.json.get('code').split("-")
+        if len(ref) == 2 :
+            id = ref[0]
+            code = ref[1]
+            group = Groupe.query.filter_by(id=id,code=code).first()
+            if group is not None:
+                if id not in current_user.groupe.split(";"):
+                    current_user.groupe=current_user.groupe+id+";"
+                    db.session.commit()
+
+
+
+
+    return jsonify()
+
+@app.route('/groupe/code/<int:id>', methods=['GET'])
+@token_required
+def groupe_registration_code(current_user,id):
+    if current_user.rank!=0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    letters = string.ascii_uppercase
+    result_str = ''.join(random.choice(letters) for i in range(6))
+
+    groupe = Groupe.query.filter_by(id=id).first()
+    groupe.code=result_str
+    db.session.commit()
+
+    return jsonify(str(groupe.id)+"-"+result_str)
+
+@app.route('/groupe/code/<int:id>', methods=['DELETE'])
+@token_required
+def groupe_delete_code(current_user,id):
+    if current_user.rank!=0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+    groupe = Groupe.query.filter_by(id=id).first()
+    groupe.code=""
+    db.session.commit()
+
+    return jsonify({})
+
+
+@app.route('/groupes', methods=['GET'])
+def get_all_groupes():
+    groupes = Groupe.query.all()
+    output = []
+    for g in groupes:
+        output.append(g.serialize())
+
+    return jsonify({'groupes' : output})
+
+@app.route('/groupe/registration', methods=['POST'])
+@token_required
+def groupe_registration(current_user):
+    if current_user.rank!=0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    else :
+        name = request.json.get('name')
+        id_formation = request.json.get('id_formation')
+        groupe = Groupe.query.filter_by(name=name,id_formation=id_formation).first()
+        if groupe is None:
+            g = Groupe(name=name)
+            g.id_formation=id_formation
+            db.session.add(g)
+            db.session.commit()
+        else:
+            g=groupe
+        return jsonify(g.serialize())
+
+#----------------------------------------- MODULES -------------------------
+@app.route('/modules/<int:id>', methods=['GET'])
+@token_required
+def get_all_modules(current_user,id):
+    print(id)
+    modules = Module.query.filter_by(id_formation=id).all()
+    output = []
+    for m in modules:
+        output.append(m.serialize())
+
+    return jsonify({'modules' : output})
+
+@app.route('/mesmodules', methods=['GET'])
+@token_required
+def get_my_modules(current_user):
+    affectation = Affectation.query.filter_by(id_groupe=current_user.groupe).all()
+    data=[]
+    for a in affectation:
+        modules = Module.query.filter_by(id=a.id_module).all()
+        for m in modules:
+            data.append(m.serialize())
+
+    modules = Module.query.filter_by(id_owner=current_user.id).all()
+    for m in modules:
+        data.append(m.serialize())
+
+
+
+    return jsonify({'modules' : data})
+
+
+@app.route('/module/registration', methods=['POST'])
+@token_required
+def modules_registration(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    else:
+        print("r",request.json)
+        name = request.json.get('name')
+        id_formation = request.json.get('id_formation')
+        resume=request.json.get('moduleResume')
+        module = Module.query.filter_by(name=name, id_formation=id_formation,id_owner=current_user.id).first()
+        if module is None:
+            m = Module(name=name)
+            m.id_owner = current_user.id
+            m.id_formation = id_formation
+            m.intro = resume
+            db.session.add(m)
+            db.session.commit()
+        else:
+            m = module
+
+        print("m",m.serialize())
+        return jsonify(m.serialize())
+
+@app.route('/module/update', methods=['POST'])
+@token_required
+def modules_update(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    else:
+        print("Update",request.json)
+        name = request.json.get('name')
+        id_module = request.json.get('id_module')
+        module = Module.query.filter_by(id=id_module,id_owner=current_user.id).first()
+        if module is not None:
+            module.name=name
+            db.session.commit()
+            return jsonify(module.serialize())
+        return jsonify({})
+
+
+
+@app.route('/affectation/del/<int:id>', methods=['DELETE'])
+@token_required
+def del_affectation(current_user,id):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+
+    ressource=Affectation.query.filter_by(id=id).delete()
+
+    print(ressource)
+    db.session.commit()
+
+    return jsonify({"id":id})
+
+
+@app.route('/module/affectation', methods=['GET'])
+@token_required
+def get_affectation(current_user):
+    affectations = Affectation.query.all()
+
+    data=[]
+    for a in affectations:
+        groupe = Groupe.query.filter_by(id=a.id_groupe).first()
+        formation = Formation.query.filter_by(id=a.id_formation).first()
+        module= Module.query.filter_by(id=a.id_module).first()
+        af =a.serialize()
+        af["groupe"]=groupe.serialize()
+        af["formation"] = formation.serialize()
+        af["module"] = module.serialize()
+
+        data.append(af)
+
+    return jsonify(data)
+
+
+@app.route('/module/affectation', methods=['POST'])
+@token_required
+def modules_affectation(current_user):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+    else:
+        print("r",request.json)
+        id_module = request.json.get('id_module')
+        id_groupe = request.json.get('id_groupe')
+        groupe = Groupe.query.filter_by(id=id_groupe).first()
+        id_formation=groupe.id_formation
+
+        todays_date = datetime.date.today()
+        year = todays_date.year
+        affectation = Affectation.query.filter_by(id_module=id_module, id_groupe=id_groupe, annee=year).first()
+        if affectation is None:
+            a = Affectation(id_module=id_module)
+            a.id_groupe = id_groupe
+            a.id_formation=id_formation
+            a.annee=year
+            db.session.add(a)
+            db.session.commit()
+        else:
+            a = affectation
+
+        print("m",a.serialize())
+        return jsonify(a.serialize())
+
+#----------------------------------------- USER ------------------------------
+@app.route('/user', methods=['GET'])
+@token_required
+def get_user(current_user):
+    return jsonify(current_user.serialize())
+
+
+@app.route('/user/registration', methods=['POST'])
+def user_registration():
+    print(request.json)
+    firstname = request.json.get('firstname')
+    lastname = request.json.get('lastname')
+    mail = request.json.get('email')
+    formation = request.json.get('formation')
+    groupe = request.json.get('groupe')
+    password = generate_password_hash(request.json.get('password'))
+    rank = 1
+
+    if  lastname is None or firstname is None or password is None or mail is None:
+        os.abort(make_response(jsonify(errors='missing parameters'), 400))
+
+    if User.query.filter_by(mail=mail).first() is not None:
+        print("existing")
+        os.abort(make_response(jsonify(errors='User already existing'), 400))
+
+    u = User(mail=mail)
+    u.password = password
+    u.lastname = lastname
+    u.firstname = firstname
+    u.formation = formation
+    u.groupe = groupe
+    u.rank = rank
+    db.session.add(u)
+    db.session.commit()
+    return jsonify(u.serialize())
+
+
+@app.route('/media/<int:id>', methods = ['GET', 'POST'])
+def get_Media(id):
+    m = Media.query.filter_by(id=id).first()
+    if m is not None:
+        print(m.url)
+        return send_file(m.url,mimetype=m.type,as_attachment=True)
+
+@app.route('/medias', methods = ['GET'])
+@token_required
+def get_Medias(current_user):
+    media = Media.query.filter_by(id_owner=current_user.id).all()
+    data = []
+    for m in media:
+        data.append(m.serialize())
+
+    return jsonify(data)
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/uploader', methods = ['GET', 'POST'])
+@token_required
+def upload_file(current_user):
+    if request.method == 'POST':
+        f = request.files['file']
+
+
+
+        letters = string.ascii_lowercase
+        idFile= ''.join(random.choice(letters) for i in range(10))
+        os.makedirs(os.path.dirname("./tmp/"), exist_ok=True)
+        f.save("./tmp/"+str(current_user.id)+idFile+secure_filename(f.filename))
+
+
+        BLOCKSIZE = 65536
+        hasher = hashlib.sha1()
+        with open("./tmp/"+str(current_user.id)+idFile+secure_filename(f.filename), 'rb') as tmp:
+            buf = tmp.read(BLOCKSIZE)
+            while len(buf) > 0:
+                hasher.update(buf)
+                buf = tmp.read(BLOCKSIZE)
+
+        hash = hasher.hexdigest()
+        media = Media.query.filter_by(fullhash=hash, id_owner=current_user.id).first()
+        if media is not None:
+            return jsonify({'path': "/media/" + str(media.id), 'type': media.type})
+
+        os.makedirs(os.path.dirname("./media/" + str(current_user.id) + "/" + idFile + "/" + secure_filename(f.filename)),exist_ok=True)
+        shutil.copy2("./tmp/"+str(current_user.id)+idFile+secure_filename(f.filename),"./media/"+str(current_user.id)+"/"+idFile+"/"+secure_filename(f.filename))
+        os.remove("./tmp/"+str(current_user.id)+idFile+secure_filename(f.filename))
+        m = Media(url="./media/"+str(current_user.id)+"/"+idFile+"/"+secure_filename(f.filename))
+        m.fullhash=hash
+        m.type=f.content_type
+        m.id_owner = current_user.id
+        db.session.add(m)
+        db.session.commit()
+
+        return jsonify({'path':"/media/"+str(m.id),'type':m.type})
+
+
+@app.route('/users', methods=['GET'])
+@token_required
+def get_all_users(current_user):
+
+    if current_user.rank!=0:
+        return jsonify({'message' : 'Cannot perform that function!'})
+
+    users = User.query.all()
+
+    output = []
+
+    for user in users:
+        output.append(user.serialize())
+
+    return jsonify({'users' : output})
+
+@app.route('/configuration')
+def configuration():
+    user = User.query.filter_by(rank=0).all()
+    if user is not None:
+        data=[]
+        for u in user:
+            data.append({"name":u.lastname,"mail":u.mail})
+        return jsonify(data)
+    u = User(mail="bd@gmp.fr")
+    u.password = generate_password_hash("azerty")
+    u.rank = 0
+    db.session.add(u)
+    db.session.commit()
+    return jsonify({"message":"ok"})
+
+
+if __name__ == '__main__':
+    #powershell  : $env:FLASK_APP = api.py
+    #CMD set FLASK_APP=api.py
+    app.run(debug=True)
