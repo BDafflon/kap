@@ -16,7 +16,7 @@ import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import InputAdornment from '@mui/material/InputAdornment';  
 import TextareaAutosize from '@mui/material/TextareaAutosize';
 import ReactMarkdown from "react-markdown";
-
+import MarkdownPreview from '@uiw/react-markdown-preview';
 
 function GetCorrection({data,correction,handleChild,index}){
   if(!correction) return <></>
@@ -94,7 +94,7 @@ export default function QuestionLongueForm ({data,handleChild, index,type,correc
         <Box sx={{  p: 2.25, boxShadow: 1 }}>
          
                   <Typography >{"Question N°:"+data.order} (Barem :{data.barem} / difficulté:{data.difficulte}) </Typography> 
-                  <ReactMarkdown children={data.question} />
+                  <MarkdownPreview  source={data.question}/>
                   <TextareaAutosize disabled={correction} value={data.reponseuser} placeholder='Reponse?' fullWidth required={data.requis==1} id="reponse" style={{ 'width': '100%', 'height':200}} onChange={handleChild(data,index,"onchange","reponseuser")} />
                   
                   <GetIndice data={data} id={id} open={open} anchorEl={anchorEl} handleClose={handleClose} handleClick={handleClick}  correction={correction} />

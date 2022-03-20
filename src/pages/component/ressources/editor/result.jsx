@@ -8,7 +8,8 @@ import editorContext from "./editor";
 import Box from "@mui/material/Box";
 import TextareaAutosize from '@mui/material/TextareaAutosize';
 import rehypeHighlight from 'rehype-highlight'
- 
+import MarkdownPreview from '@uiw/react-markdown-preview';
+
 import 'katex/dist/katex.min.css' // `rehype-katex` does not import the CSS for you
 
 export function Result(props) {
@@ -21,10 +22,7 @@ export function Result(props) {
         
      </div>
       
-        <ReactMarkdown children={markdownText} 
-         
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeKatex]}
+        <MarkdownPreview  source={markdownText} 
         
         />
      
