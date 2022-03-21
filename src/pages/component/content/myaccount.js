@@ -32,6 +32,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import GroupIcon from '@mui/icons-material/Group';
 
 async function affectationGroupe(token,code){
   console.log("affectationGroupe",code,token)
@@ -96,8 +97,41 @@ async function getFormation() {
         }).then(response => response.json())
    }
 
- 
-function getUser(token){
+ async function trashGroup(token,groupe){
+  console.log("trashGroup",groupe,token)
+  const formData = new FormData();
+  formData.append("groupe", groupe);
+
+  const requestOptions = {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'x-access-token': token.token,
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({groupe:groupe})
+  }
+  const response = await fetch(
+    ConfigData.SERVER_URL + '/groupe/del',
+    requestOptions
+  )
+  if (!response.ok) {
+    //localStorage.removeItem('token')
+    //window.location.reload(false);
+    console.log(response)
+  }
+  if (response.status == 401) {
+    //localStorage.removeItem('token')
+    //window.location.reload(false);
+  }
+  return response
+ }
+
+
+
+   async function getUser(token){
+     console.log("token ? ",token)
   return fetch(ConfigData.SERVER_URL+'/user', {
     method: 'GET',
     mode: "cors",
@@ -121,7 +155,7 @@ function filtreGroupe(groupes,idFormation){
 }
 
 
-export default function MyAccount({token}){
+export default function MyAccount({token,dashboardType}){
     const [formations, setData] = useState([]);
     const [groupes, setGroupes] = useState([]);
     const [groupesFiltre, setGroupesFiltre] = React.useState([]);
@@ -130,7 +164,7 @@ export default function MyAccount({token}){
     const [openGroupModal, setOpenGroupModal] = React.useState(false);
     const [code, setCode]=React.useState("");
     const [user, setUser]=React.useState();
-
+    const [updater, setUpdater]=React.useState(0)
     const navigate = useNavigate();
 
 
@@ -146,12 +180,13 @@ export default function MyAccount({token}){
             setGroupes(response["groupes"])
 
             response = await getUser(token)
-            setUser(response)
+         
 
-            console.log("user",user)
+            console.log("user",response)
+            setUser(response)
         }
         getData()
-    }, []);
+    }, [dashboardType,updater]);
 
     
 
@@ -159,12 +194,18 @@ export default function MyAccount({token}){
     await affectationGroupe(token,code)
     setCode("")
     setOpenGroupModal(false)
+    setUpdater(oldKey => oldKey + 1)
   }
   const handleClose = () =>{
     setOpenGroupModal(false)
+    setUpdater(oldKey => oldKey + 1)
   }
 
- 
+  const handleTrashGroup =  (groupe) =>async(e)=> {
+    var x = await trashGroup(token,groupe)
+    setUpdater(oldKey => oldKey + 1)
+
+  }
   const handleChangeCode = event => {
     const {
       target: { value }
@@ -175,6 +216,7 @@ export default function MyAccount({token}){
 
   const handleAddGroupe = ()=>{
     setOpenGroupModal(true)
+    
   }
 
     const formik = useFormik({
@@ -380,25 +422,27 @@ export default function MyAccount({token}){
                   </Box>
                         
                       <List dense={true} sx={{p: 2.25, boxShadow: 1}}> 
+                      {user==undefined?<></>: user.groupes.map((groupe,j)=>(
                        
                          
                             <ListItem>
                             <ListItemAvatar>
                               <Avatar>
-                               <FolderIcon />
+                               <GroupIcon />
                               </Avatar>
                             </ListItemAvatar>
                             <ListItemText
-                              primary="Groupe"
+                              primary={groupe.name}
                               
                             />
                              
                       <ListItemIcon>
-                          <IconButton>
-                              <DeleteIcon />
+                          <IconButton  onClick={handleTrashGroup(groupe)}>
+                              <DeleteIcon/>
                           </IconButton>
                       </ListItemIcon>
                                 </ListItem>
+                      ))}
                               
                         
                         </List>

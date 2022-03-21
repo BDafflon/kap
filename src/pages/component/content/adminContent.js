@@ -13,14 +13,19 @@ import { useEffect } from 'react'
 import CardRessource from './module/cardressource';
 import CardCorrection from './module/cardcorrection';
 import Groupe from './module/groupe';
-
+import CastForEducationIcon from '@mui/icons-material/CastForEducation';
+import IconButton from '@mui/material/IconButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Live from "./module/live/live";
 
 
 function GetModuleAdmin({module,token,listRessource,listeExam,handleUpdate}){
     
     return (
         <> <h1>Administration</h1>
-        <h2>{module.label}</h2>
+        <h2>{module.label} <Live module={module} token={token} />
+       
+        </h2>
         <Box  >
         <Grid container spacing={3}>
             <Grid item xs={12}>

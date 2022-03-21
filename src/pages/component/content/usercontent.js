@@ -13,6 +13,7 @@ import PropType from 'prop-types';
 import ConfigData from '../../../utils/configuration.json';
 import Module from './module/module';
 import MyAccount from "./myaccount";
+import LiveUser from './module/live/liveuser';
 
 export default function UserContent({module,token, dashboardType}){
     const [m, setModule] = React.useState()
@@ -26,7 +27,7 @@ export default function UserContent({module,token, dashboardType}){
 
     if(module==undefined){
       if(dashboardType==1){
-        return(<MyAccount token={token}/>)
+        return(<MyAccount token={token} dashboardType={dashboardType}/>)
       }
       if(dashboardType==0){
         return(<h1>Tableau de bord</h1>)
@@ -38,7 +39,9 @@ export default function UserContent({module,token, dashboardType}){
     return(
         <>
           <h1>Tableau de bord</h1>
-          <h2>Module : {module.label}</h2>
+          <h2>Module : {module.label}
+          <LiveUser module={module} token={token} />
+          </h2>
           
         
      

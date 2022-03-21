@@ -10,6 +10,7 @@ import ListItemText from '@mui/material/ListItemText';
 import IconButton from '@mui/material/IconButton';
 import FolderIcon from '@mui/icons-material/Folder';
 import DeleteIcon from '@mui/icons-material/Delete';
+import TextareaAutosize from '@mui/material/TextareaAutosize';
 // project imports
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -21,7 +22,8 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import ConfigData from '../../../../utils/configuration.json';
 import GroupAddRoundedIcon from '@mui/icons-material/GroupAddRounded';
- 
+import CastForEducationIcon from '@mui/icons-material/CastForEducation';
+
 import TextField from '@mui/material/TextField'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -29,8 +31,8 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import InputLabel from '@mui/material/InputLabel'
-
-
+import io from "socket.io-client";
+ 
 async function generateCode(token, groupeSelected){
 
   const requestOptions = {
@@ -113,7 +115,8 @@ export default function Groupe({data,token}){
     const [openModalCodeGroupe, setOpenModalCodeGroupe] = React.useState(false)
     const [codeGroupe, setCodeGroupe] = React.useState("")
     const [groupeSelected, setDataGroupeSelected] = React.useState(null)
-
+  
+    
     useEffect(() => {
       if(data != undefined){
         async function load () {
@@ -144,7 +147,7 @@ export default function Groupe({data,token}){
         setRessource(param)
         setOpen(true);
     }
-
+ 
     const closeModal=()=>{
         setOpen(false);
     }
@@ -157,6 +160,7 @@ export default function Groupe({data,token}){
         setOpenAlert(true);
       };
     
+   
       const handleCloseAlert = () => {
         setOpenAlert(false);
       };
@@ -213,6 +217,7 @@ export default function Groupe({data,token}){
                 <GroupAddRoundedIcon />
             </IconButton>
         </ListItemIcon>
+        
                   </ListItem>
            {item.users.map((i,j)=>(
               <ListItem
@@ -292,6 +297,11 @@ export default function Groupe({data,token}){
           <Button onClick={handleCloseCodeGroupe}>Fermer</Button>
         </DialogActions>
       </Dialog>
+
+
+
+
+ 
         </>
     )
 }
