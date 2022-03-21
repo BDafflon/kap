@@ -22,7 +22,7 @@ app.config['CORS_HEADERS'] = '*'
 
 CORS(app, origins="*", allow_headers="*")
 app.config['SECRET_KEY'] = 'thisissecret'
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:azerty@localhost:5432/flask2"
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:*******@localhost:5432/flask2"
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['CORS_HEADERS'] = 'Content-Type'
 
