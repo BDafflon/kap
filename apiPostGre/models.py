@@ -3,6 +3,60 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
+
+class RessourceLive(db.Model):
+    __tablename__ = 'ressourcelive'
+    id = db.Column(db.Integer, primary_key=True)
+    id_module = db.Column(db.Integer)
+    dateO = db.Column(db.Integer)
+    dateF = db.Column(db.Integer)
+    id_owner = db.Column(db.Integer)
+    titre = db.Column(db.String(255))
+    room = db.Column(db.String(255))
+
+
+class RessourceLiveDetail(db.Model):
+    __tablename__ = 'ressourceliveDetail'
+    id = db.Column(db.Integer, primary_key=True)
+    id_live=db.Column(db.Integer)
+    id_module = db.Column(db.Integer)
+    content = db.Column(db.String(255))
+    option = db.Column(db.String(255))
+    dateO = db.Column(db.Integer)
+    dateF = db.Column(db.Integer)
+    id_user=db.Column(db.Integer)
+    def serialize(self):
+        return {
+            'id':self.id,
+            'id_module':self.id_module,
+            'id_user':self.id_user,
+            'id_live':self.id_live,
+            'content':self.content,
+            'option': self.option,
+            'dateO': self.dateO,
+            'dateF': self.dateF,
+        }
+
+
+class RessourceLiveParticipation(db.Model):
+    __tablename__ = 'ressourceliveParticipation'
+    id = db.Column(db.Integer, primary_key=True)
+    id_module = db.Column(db.Integer)
+    id_user = db.Column(db.Integer)
+    id_RessourceLiveDetail=db.Column(db.Integer)
+    content = db.Column(db.String(255))
+    dateO=db.Column(db.Integer)
+    def serialize(self):
+        return {
+            'id':self.id,
+            'id_module':self.id_module,
+            'id_user':self.id_user,
+            'id_RessourceLiveDetail':self.id_RessourceLiveDetail,
+            'content':self.content,
+            'dateO': self.dateO,
+
+        }
+
 class RessourceStat(db.Model):
     __tablename__ = 'ressourcestat'
     id = db.Column(db.Integer, primary_key=True)

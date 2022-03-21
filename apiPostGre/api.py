@@ -3,6 +3,7 @@ import shutil
 
 from flask import Flask, render_template, request, jsonify, make_response, send_file
 from flask_migrate import Migrate
+from flask_socketio import SocketIO, send, join_room, leave_room, emit
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 import jwt
@@ -14,15 +15,18 @@ import random
 import string
 import hashlib
 import json
+
+from id import getid
 from models import db, User, Formation, Affectation, Groupe, RessourceStat, RessourceText, RessourceQestions, \
-    Evaluation, Module, Question, Media, ReponseEvaluation
+    Evaluation, Module, Question, Media, ReponseEvaluation, RessourceLive, RessourceLiveDetail, \
+    RessourceLiveParticipation
 
 app = Flask(__name__)
 app.config['CORS_HEADERS'] = '*'
 
 CORS(app, origins="*", allow_headers="*")
 app.config['SECRET_KEY'] = 'thisissecret'
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:*******@localhost:5432/flask2"
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://"+getid()[0]+":"+getid()[1]+"@localhost:5432/kap"
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['CORS_HEADERS'] = 'Content-Type'
 
@@ -30,6 +34,10 @@ ALLOWED_EXTENSIONS = {'txt', 'doc', 'dox', 'jpg', 'jpeg', 'png', 'xls', 'xlsx', 
 
 db.init_app(app)
 migrate = Migrate(app, db)
+
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+
 
 @app.route('/')
 def home():
@@ -59,6 +67,84 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
 
     return decorated
+
+
+@socketio.on('join')
+def on_join(data):
+    print("Joining!")
+    print('on_join!', data)
+    token = data["token"]["token"]
+    dataId = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+    current_user = User.query.filter_by(id=dataId['id']).first()
+    if current_user.rank == 0:
+        live = RessourceLive(titre=data["titre"])
+        live.id_module=data["module"]["id_module"]
+        live.dateO=datetime.datetime.now().timestamp()
+        live.id_owner=dataId["id"]
+        live.room = data["room"]
+        db.session.add(live)
+        db.session.commit()
+    join_room(data["room"])
+
+
+
+
+
+
+@socketio.on('disconnect')
+def on_leave():
+    print('disconnection!')
+
+@socketio.on('liveReponse')
+def on_liveReponse(data):
+    print("liveReponse",data)
+    token = data["token"]["token"]
+    dataId = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+    current_user = User.query.filter_by(id=dataId['id']).first()
+    if current_user is not None:
+        detail = RessourceLiveDetail.query.filter_by(id=data["question"]['id']).first()
+        if detail is not None:
+            if detail.dateF > datetime.datetime.now().timestamp():
+                live = RessourceLive.query.filter_by(room=data["room"]).first()
+                if live is not None:
+                    reponse = RessourceLiveParticipation(id_RessourceLiveDetail=data["question"]['id'])
+                    reponse.id_module = data["module"]['id_module']
+                    reponse.content = data["reponse"]
+                    reponse.id_user = dataId['id']
+                    reponse.id_RessourceLiveDetail = live.id
+                    reponse.dateO=datetime.datetime.now().timestamp()
+                    db.session.add(reponse)
+                    db.session.commit()
+
+                    rs = reponse.serialize()
+                    rs["question"] = data["question"]
+                    print("send rép")
+                    emit("addReponse", rs, broadcast=True, room=data["room"])
+
+
+
+
+@socketio.on('liveQuestion')
+def on_liveQuestion(data):
+    print('liveQuestion!',data)
+    token = data["token"]["token"]
+    dataId = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+    current_user = User.query.filter_by(id=dataId['id']).first()
+    if current_user.rank == 0:
+        live = RessourceLive.query.filter_by(room=data["room"]).first()
+        if live is not None:
+            detail = RessourceLiveDetail(id_module=data["module"]["id_module"])
+            detail.content=data["question"]
+            detail.id_live=live.id
+            detail.option=data["option"]
+            detail.dateO=datetime.datetime.now().timestamp()
+            detail.dateF=datetime.datetime.now().timestamp()+data["timer"]
+            db.session.add(detail)
+            db.session.commit()
+            emit("addQuestion",detail.serialize(),broadcast=True,room=data["room"])
+
+
+
 @app.route('/login')
 def login():
     auth = request.authorization
@@ -581,6 +667,26 @@ def get_all_groupes_module(current_user,id):
     return jsonify(output)
 
 
+@app.route('/groupe/del', methods=['POST'])
+@token_required
+def del_group_user(current_user):
+    print("trash")
+    print("trash groupe",request.json.get('groupe'), current_user.groupe)
+    if request.json.get('groupe') is not None:
+        print("split")
+        groupesId = [int(i) for i in current_user.groupe.split(';') if len(i)>0]
+
+        print("groupesId ", groupesId)
+        if int(request.json.get('groupe')["id"]) in groupesId:
+            print('->',groupesId)
+            groupesId.remove(int(request.json.get('groupe')["id"]))
+            groupesStr = ';'.join(groupesId)
+            print('-->',groupesStr)
+            current_user.groupe = groupesStr
+            db.session.commit()
+    return jsonify({})
+
+
 
 @app.route('/groupe/affectation', methods=['POST'])
 @token_required
@@ -594,9 +700,13 @@ def groupe_affectation_user(current_user):
             code = ref[1]
             group = Groupe.query.filter_by(id=id,code=code).first()
             if group is not None:
-                if id not in current_user.groupe.split(";"):
-                    current_user.groupe=current_user.groupe+id+";"
+                if current_user.groupe is None:
+                    current_user.groupe = str(id) + ";"
                     db.session.commit()
+                else :
+                    if id not in current_user.groupe.split(";"):
+                        current_user.groupe=current_user.groupe+id+";"
+                        db.session.commit()
 
 
 
@@ -672,12 +782,17 @@ def get_all_modules(current_user,id):
 @app.route('/mesmodules', methods=['GET'])
 @token_required
 def get_my_modules(current_user):
-    affectation = Affectation.query.filter_by(id_groupe=current_user.groupe).all()
-    data=[]
-    for a in affectation:
-        modules = Module.query.filter_by(id=a.id_module).all()
-        for m in modules:
-            data.append(m.serialize())
+    data = []
+    if current_user.groupe is not None:
+        groupesId = [int(i) for i in current_user.groupe.split(';') if len(i)>0]
+
+        for g in groupesId:
+            affectation = Affectation.query.filter_by(id_groupe=g).all()
+
+            for a in affectation:
+                modules = Module.query.filter_by(id=a.id_module).all()
+                for m in modules:
+                    data.append(m.serialize())
 
     modules = Module.query.filter_by(id_owner=current_user.id).all()
     for m in modules:
@@ -797,7 +912,16 @@ def modules_affectation(current_user):
 @app.route('/user', methods=['GET'])
 @token_required
 def get_user(current_user):
-    return jsonify(current_user.serialize())
+    user = current_user.serialize()
+    groupes=[]
+    if current_user.groupe is not None:
+        for g in current_user.groupe.split(';'):
+            print("groupe ",g,current_user.groupe.split(';'))
+            if len(g)>0:
+                groupe = Groupe.query.filter_by(id=int(g)).first()
+                groupes.append(groupe.serialize())
+    user["groupes"]=groupes
+    return jsonify(user)
 
 
 @app.route('/user/registration', methods=['POST'])
@@ -911,7 +1035,7 @@ def get_all_users(current_user):
 @app.route('/configuration')
 def configuration():
     user = User.query.filter_by(rank=0).all()
-    if user is not None:
+    if user is not None and len(user)!=0:
         data=[]
         for u in user:
             data.append({"name":u.lastname,"mail":u.mail})
@@ -927,4 +1051,4 @@ def configuration():
 if __name__ == '__main__':
     #powershell  : $env:FLASK_APP = api.py
     #CMD set FLASK_APP=api.py
-    app.run(debug=True)
+    socketio.run(app, debug=True)
