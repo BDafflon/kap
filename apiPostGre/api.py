@@ -107,6 +107,15 @@ def on_liveReponse(data):
             if detail.dateF > datetime.datetime.now().timestamp():
                 live = RessourceLive.query.filter_by(room=data["room"]).first()
                 if live is not None:
+                    if detail.reponseunique==1:
+                        print("rep unique")
+                        rep = RessourceLiveParticipation.query.filter_by(id_RessourceLiveDetail=data["question"]['id_live'],id_user=dataId['id']).all()
+                        print("rep unique ",len(rep),dataId['id'])
+                        if len(rep)!=0:
+                            emit("already", dataId['id'], broadcast=True, room=data["room"])
+                            return
+
+
                     reponse = RessourceLiveParticipation(id_RessourceLiveDetail=data["question"]['id'])
                     reponse.id_module = data["module"]['id_module']
                     reponse.content = data["reponse"]
@@ -118,8 +127,10 @@ def on_liveReponse(data):
 
                     rs = reponse.serialize()
                     rs["question"] = data["question"]
+                    rs["user"]=User.query.filter_by(id=dataId['id']).first().serialize()
                     print("send rép")
                     emit("addReponse", rs, broadcast=True, room=data["room"])
+
 
 
 
@@ -137,6 +148,8 @@ def on_liveQuestion(data):
             detail.content=data["question"]
             detail.id_live=live.id
             detail.option=data["option"]
+            detail.type = data["type"]
+            detail.reponseunique = data["reponseunique"]
             detail.dateO=datetime.datetime.now().timestamp()
             detail.dateF=datetime.datetime.now().timestamp()+data["timer"]
             db.session.add(detail)
