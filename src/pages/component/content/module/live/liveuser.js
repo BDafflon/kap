@@ -89,7 +89,10 @@ export default function LiveUser({module,token}){
       setOpenLiveModal(false)
       socket.disconnect()
     }
-  
+    
+    const already=(e)=>{
+      console.log("deja répondu")
+    }
     const addQuestion=(e)=>{
       
        
@@ -104,6 +107,7 @@ export default function LiveUser({module,token}){
     const sock =  io(ConfigData.SERVER_URL)
     sock.emit('join', {"name":"", "room":titre,"token":token,"module":module})
     sock.on('addQuestion', addQuestion); 
+    sock.on('already', already); 
     
     setSocket(sock)
    }
