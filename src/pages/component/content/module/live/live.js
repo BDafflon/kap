@@ -13,6 +13,7 @@ import IconButton from '@mui/material/IconButton';
 import FolderIcon from '@mui/icons-material/Folder';
 import DeleteIcon from '@mui/icons-material/Delete';
 import TextareaAutosize from '@mui/material/TextareaAutosize';
+import Checkbox from '@mui/material/Checkbox';
 // project imports
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -38,7 +39,10 @@ import DialogTitle from '@mui/material/DialogTitle'
 import InputLabel from '@mui/material/InputLabel'
 import io from "socket.io-client";
 import Stack from '@mui/material/Stack';
- 
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -61,7 +65,8 @@ charactersLength));
  
  
 export default function Live({module,token}){
-    const [questionList, setQuestionList] = React.useState({})
+    const [currentQuestion, setCurrentQuestion] = React.useState({question:"",reponses:[]})
+    const [questionList, setQuestionList] = React.useState([])
     const [openLiveModal, setOpenLiveModal] = React.useState(false)
     const [streamID, setStreamID] = React.useState(makeid(5))
     const [socket , setSocket ] = React.useState()
@@ -69,7 +74,16 @@ export default function Live({module,token}){
     const [option, setOption] = React.useState("");
     const [question, setQuestion] = React.useState("");
     const [titre, setTitre] = React.useState("");
+    const [checked, setChecked] = React.useState(true);
+    const [value, setValue] = React.useState(2);
 
+    const handleChange = (event) => {
+      setChecked(event.target.checked);
+    };
+
+    const handleChangeQCM = (event) => {
+      setValue(event.target.value);
+    };
 
     useEffect(() => {
         setStreamID(module.id_module+"-"+makeid(5))
@@ -78,19 +92,22 @@ export default function Live({module,token}){
     
  
     const addReponse=(e)=>{
-        console.log(e)
-        var t = questionList
 
-        if (questionList[e.question.id]==undefined){
-            questionList[e.question.id]={"quetion":e.question,"reponse":[{"content":e.content, "user":e.user, "dateO":e.date0}]}
+        console.log(e,currentQuestion)
+        if(currentQuestion.question==""){
+          currentQuestion.question=e.question.content
+          currentQuestion.type=e.question.type
+          currentQuestion.option=e.question.option
+          currentQuestion.reponses=[{reponse:e.content,user:e.user}]
+          setCurrentQuestion({...currentQuestion});
+        }else{
+          currentQuestion.reponses.unshift({reponse:e.content,user:e.user})
+          setCurrentQuestion({...currentQuestion});
         }
-        else{
-            questionList[e.question.id]['reponse'].push({"content":e.content, "user":e.user, "dateO":e.dateO})
-        }
-
-        setQuestionList(questionList)
-
-        console.log("addReponse",questionList)
+         
+          
+      
+        console.log("addReponse",currentQuestion)
        
 
     }
@@ -103,8 +120,13 @@ export default function Live({module,token}){
         var minutes = datum.getMinutes();
         var hour = 0;
         var t = seconds+minutes*60+hour*3600
-
-        socket.emit('liveQuestion',{"timer":t,"option":option,"question":question,"token":token,"module":module,"room":streamID})
+        
+       
+        console.log("click",currentQuestion,questionList)
+        currentQuestion.question=""
+        currentQuestion.reponses=[]
+        setCurrentQuestion({...currentQuestion});
+        socket.emit('liveQuestion',{"timer":t,"reponseunique":checked?1:0,"type":value,"option":option,"question":question,"token":token,"module":module,"room":streamID})
     }
     const handleCloseLiveModal =()=>{
       setOpenLiveModal(false)
@@ -113,6 +135,7 @@ export default function Live({module,token}){
   
    const handleStart =()=>{
     console.log("live",module)
+    setQuestionList([])
     var id = module.id_module+"-"+makeid(5)
     setStreamID(id)
     const sock =  io(ConfigData.SERVER_URL)
@@ -177,7 +200,28 @@ export default function Live({module,token}){
                 setQuestion(event.target.value);
               }}
           />
-          <TextField id="standard-basic" label="Option" variant="standard" fullWidth 
+          <Box style={{ width: "100%" }}s>
+          <RadioGroup
+        row
+        aria-labelledby="demo-row-radio-buttons-group-label"
+        name="row-radio-buttons-group"
+        value={value}
+        onChange={handleChangeQCM}
+        fullWidth
+         
+      >
+        <FormControlLabel value="1" control={<Radio />} label="QCM" />
+        <FormControlLabel value="2" control={<Radio />} label="Occurrence" />
+        <FormControlLabel value="3" control={<Radio />} label="Stream" />
+        <FormControlLabel control={
+            <Checkbox defaultChecked checked={checked}
+                      onChange={handleChange} />
+              } label="Reponse unique" />
+      </RadioGroup>
+      </Box>
+      
+
+        <TextField id="standard-basic" label="Option" variant="standard" fullWidth 
           value={option}
           onChange={(event) => {
             setOption(event.target.value);
