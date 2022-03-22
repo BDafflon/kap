@@ -22,6 +22,8 @@ class RessourceLiveDetail(db.Model):
     id_module = db.Column(db.Integer)
     content = db.Column(db.String(255))
     option = db.Column(db.String(255))
+    type = db.Column(db.Integer)
+    reponseunique = db.Column(db.Integer)
     dateO = db.Column(db.Integer)
     dateF = db.Column(db.Integer)
     id_user=db.Column(db.Integer)
@@ -31,6 +33,8 @@ class RessourceLiveDetail(db.Model):
             'id_module':self.id_module,
             'id_user':self.id_user,
             'id_live':self.id_live,
+            'reponseunique':self.reponseunique,
+            "type":self.type,
             'content':self.content,
             'option': self.option,
             'dateO': self.dateO,
