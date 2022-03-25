@@ -3,7 +3,7 @@ import shutil
 
 from flask import Flask, render_template, request, jsonify, make_response, send_file
 from flask_migrate import Migrate
-from flask_socketio import SocketIO, send, join_room, leave_room, emit
+from flask_socketio import SocketIO, send, join_room, leave_room, emit, rooms
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 import jwt
@@ -108,8 +108,8 @@ def on_liveReponse(data):
                 live = RessourceLive.query.filter_by(room=data["room"]).first()
                 if live is not None:
                     if detail.reponseunique==1:
-                        print("rep unique")
-                        rep = RessourceLiveParticipation.query.filter_by(id_RessourceLiveDetail=data["question"]['id_live'],id_user=dataId['id']).all()
+                        print("rep unique ",data["question"])
+                        rep = RessourceLiveParticipation.query.filter_by(id_RessourceLiveDetail=data["question"]['id'],id_user=dataId['id']).all()
                         print("rep unique ",len(rep),dataId['id'])
                         if len(rep)!=0:
                             emit("already", dataId['id'], broadcast=True, room=data["room"])
@@ -120,7 +120,6 @@ def on_liveReponse(data):
                     reponse.id_module = data["module"]['id_module']
                     reponse.content = data["reponse"]
                     reponse.id_user = dataId['id']
-                    reponse.id_RessourceLiveDetail = live.id
                     reponse.dateO=datetime.datetime.now().timestamp()
                     db.session.add(reponse)
                     db.session.commit()
@@ -138,6 +137,7 @@ def on_liveReponse(data):
 @socketio.on('liveQuestion')
 def on_liveQuestion(data):
     print('liveQuestion!',data)
+
     token = data["token"]["token"]
     dataId = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
     current_user = User.query.filter_by(id=dataId['id']).first()
@@ -254,6 +254,39 @@ def ressource_evaluation_participation(current_user):
     return jsonify({"message":"ok"})
 
 
+
+
+
+
+@app.route('/live/close/<id>', methods=['GET'])
+@token_required
+def close_live(current_user,id):
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+    live = RessourceLive.query.filter_by(room=id).all()
+    for l in live:
+        l.dateF=datetime.datetime.now().timestamp()
+        db.session.commit()
+
+
+    return jsonify({})
+
+@app.route('/live/<int:id>', methods=['GET'])
+@token_required
+def get_live(current_user,id):
+    lives = RessourceLive.query.filter_by(id_module=id).all()
+    data=[]
+    for l in lives:
+        if l.dateF is None:
+            affectation = Affectation.query.filter_by(id_module=id).all()
+            for a in affectation:
+                if str(a.id_groupe) in current_user.groupe.split(";"):
+                    ls = l.serialize()
+                    ls["module"]=Module.query.filter_by(id=l.id_module).first().serialize()
+                    data.append(ls)
+
+    return jsonify(data)
 
 @app.route('/ressource/evaluation/<int:id>', methods=['GET'])
 @token_required
@@ -670,7 +703,8 @@ def get_all_groupes_module(current_user,id):
         userData=[]
         for u in users:
             if u.groupe is not None:
-                if a.id_groupe in u.groupe.split(";"):
+                print(" groupe ",a.id_groupe,u.groupe.split(";"),str(a.id_groupe) in u.groupe.split(";"))
+                if str(a.id_groupe) in u.groupe.split(";"):
                     userData.append(u.serialize())
         item["users"]=userData
         item["groupe"]=groupe.serialize()

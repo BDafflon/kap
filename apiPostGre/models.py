@@ -13,6 +13,16 @@ class RessourceLive(db.Model):
     id_owner = db.Column(db.Integer)
     titre = db.Column(db.String(255))
     room = db.Column(db.String(255))
+    def serialize(self):
+        return {
+            'id':self.id,
+            'id_module':self.id_module,
+            'id_owner':self.id_owner,
+            "titre":self.titre,
+            'room':self.room,
+            'dateO': self.dateO,
+            'dateF': self.dateF,
+        }
 
 
 class RessourceLiveDetail(db.Model):
@@ -50,6 +60,7 @@ class RessourceLiveParticipation(db.Model):
     id_RessourceLiveDetail=db.Column(db.Integer)
     content = db.Column(db.String(255))
     dateO=db.Column(db.Integer)
+    reward=db.Column(db.Integer)
     def serialize(self):
         return {
             'id':self.id,
@@ -58,6 +69,7 @@ class RessourceLiveParticipation(db.Model):
             'id_RessourceLiveDetail':self.id_RessourceLiveDetail,
             'content':self.content,
             'dateO': self.dateO,
+            "reward":self.reward
 
         }
 
