@@ -38,7 +38,11 @@ import DialogTitle from '@mui/material/DialogTitle'
 import InputLabel from '@mui/material/InputLabel'
 import io from "socket.io-client";
 import Stack from '@mui/material/Stack';
- 
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress';
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -59,22 +63,85 @@ charactersLength));
  return result;
 }
  
+function GetErreur({erreur,erreurMsg}){
+  if(erreur)
+    return <Alert severity="error">{erreurMsg}</Alert>
+  else
+    return <></>
+}
+function GetForm({reponse,setReponse,question}){
+  console.log("GetForm ",question)
+  if(question.type==1){
+  var options = question.option.split("§")
+
+    return(
+      <>
+      <RadioGroup
+        row
+        aria-labelledby="demo-row-radio-buttons-group-label"
+        name="row-radio-buttons-group"
+        value={reponse}
+        onChange={(event) => {
+          setReponse(event.target.value);
+        }}
+        fullWidth
+         
+      >
+        {
+          options.map((val,i)=>(
+            <FormControlLabel value={val} control={<Radio />} label={val} />
+          ))
+        }
+        
+       
+  
+      </RadioGroup>
+      </>
+    )
+  }
+  else
+  return(
+  <TextareaAutosize
+            aria-label="minimum height"
+            minRows={3}
+            value={reponse}
+            placeholder="Reponse"
+            style={{ width: "100%" }}
+            onChange={(event) => {
+                setReponse(event.target.value);
+              }}
+          />)
+}
+
+function  map(value, istart, istop, ostart, ostop){
+    return ostart + (ostop - ostart) * ((value - istart) / (istop - istart))
+}
+
  
 export default function LiveUser({module,token}){
     const [questionList, setQList] = React.useState([])
     const [openLiveModal, setOpenLiveModal] = React.useState(false)
     const [streamID, setStreamID] = React.useState(makeid(5))
     const [socket , setSocket ] = React.useState()
-    const [timer, setTimer] = React.useState(new Date());
+    const [updater, setUpdater] = React.useState(0);
     const [option, setOption] = React.useState("");
-    const [question, setQuestion] = React.useState("");
+    const [question, setQuestion] = React.useState();
     const [reponse, setReponse] = React.useState("");
     const [titre, setTitre] = React.useState("");
+    const [erreur,setErreur] = React.useState(false)
+    const [erreurMsg,setErreurMsg] = React.useState("")
+    const [progress, setProgress] = React.useState(0);
 
 
     useEffect(() => {
-      
-      }, [module]);
+      setQList([])
+      setQuestion("")
+      setReponse("")
+      setErreur(false)
+      setErreurMsg('')
+      setProgress(0)
+
+      }, [module,updater]);
 
     
  
@@ -92,15 +159,37 @@ export default function LiveUser({module,token}){
     
     const already=(e)=>{
       console.log("deja répondu")
+      setErreur(true)
+      setErreurMsg('Déja répondu')
     }
     const addQuestion=(e)=>{
+      setProgress(0)
       
-       
+      setErreur(false)
       setQuestion(e)
       var t = questionList
       t.push(e)
       setQList([...t])
       console.log("question ",question,questionList)
+
+
+      
+      const timer = setInterval(() => {
+        setProgress((oldProgress) => {
+          var e = questionList[questionList.length-1]
+          console.log("map",Math.round(new Date().getTime()/1000),e.dateO,e.dateF,0,100)
+          var x = parseInt(map(Math.round(new Date().getTime()/1000),e.dateO,e.dateF,0,100))
+          console.log("progress ",x)
+          if(x>=100){
+            setErreur(true)
+            setErreurMsg("Temps ecoulé")
+          }
+          return Math.min(x, 100);
+        });
+
+      }, 1000);
+      
+
     }
    const handleStart =()=>{
     
@@ -108,6 +197,7 @@ export default function LiveUser({module,token}){
     sock.emit('join', {"name":"", "room":titre,"token":token,"module":module})
     sock.on('addQuestion', addQuestion); 
     sock.on('already', already); 
+    setUpdater(updater+1)
     
     setSocket(sock)
    }
@@ -150,7 +240,9 @@ export default function LiveUser({module,token}){
             setTitre(event.target.value);
           }}
            />
-           <Button variant="outlined"  onClick={handleStart} sx={{width:"10%"}}>Start</Button>
+           {
+             socket==undefined?<Button variant="outlined"  onClick={handleStart} sx={{width:"10%"}}>Rejoindre</Button>:<></>
+           }
         </DialogTitle>
       
         <DialogContent dividers>
@@ -160,16 +252,8 @@ export default function LiveUser({module,token}){
     <Item>
     <DialogContentText id="alert-dialog-description">
           <Typography>Reponse :</Typography>
-          <TextareaAutosize
-            aria-label="minimum height"
-            minRows={3}
-            value={reponse}
-            placeholder="Reponse"
-            style={{ width: "100%" }}
-            onChange={(event) => {
-                setReponse(event.target.value);
-              }}
-          />
+          <GetForm reponse={reponse} setReponse={setReponse} question={question}/>
+          <GetErreur erreur={erreur} erreurMsg={erreurMsg} />
  
         <Box sx={{m:2}}>
           <Button variant="outlined" fullWidth onClick={handleSend} >Envoyer</Button>
@@ -178,7 +262,14 @@ export default function LiveUser({module,token}){
     </Item>
   </Grid>
   <Grid item xs={8}>
-    <Item>{question!=undefined?question.content:""} </Item>
+    <Item>
+    <Box sx={{ width: '100%' }}>
+    {question!=undefined?<LinearProgress variant="determinate" value={progress} />:<></>}
+      
+    </Box>
+
+      {question!=undefined?question.content:""}
+       </Item>
   </Grid>
   </Grid>
           
