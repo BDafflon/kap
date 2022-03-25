@@ -43,6 +43,9 @@ import RadioGroup from '@mui/material/RadioGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Alert from '@mui/material/Alert';
 import LinearProgress from '@mui/material/LinearProgress';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -51,6 +54,36 @@ const Item = styled(Paper)(({ theme }) => ({
     textAlign: 'center',
     color: theme.palette.text.secondary,
   }));
+
+
+
+async function getCodeLive(module, token){
+  const requestOptions = {
+    method: 'GET',
+    mode: 'cors',
+    headers: {
+      'x-access-token': token.token,
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    }
+  }
+  const response = await fetch(
+    ConfigData.SERVER_URL + '/live/'+module.id_module,
+    requestOptions
+  )
+  if (!response.ok) {
+    localStorage.removeItem('token')
+    window.location.reload(false);
+    console.log(response)
+  }
+  if (response.status == 401) {
+    localStorage.removeItem('token')
+    window.location.reload(false);
+  }
+  const result = await response.json()
+  return result
+
+}
 
 function makeid(length) {
   var result           = '';
@@ -122,7 +155,7 @@ export default function LiveUser({module,token}){
     const [questionList, setQList] = React.useState([])
     const [openLiveModal, setOpenLiveModal] = React.useState(false)
     const [streamID, setStreamID] = React.useState(makeid(5))
-    const [socket , setSocket ] = React.useState()
+    const [socket , setSocket ] = React.useState(undefined)
     const [updater, setUpdater] = React.useState(0);
     const [option, setOption] = React.useState("");
     const [question, setQuestion] = React.useState();
@@ -131,9 +164,13 @@ export default function LiveUser({module,token}){
     const [erreur,setErreur] = React.useState(false)
     const [erreurMsg,setErreurMsg] = React.useState("")
     const [progress, setProgress] = React.useState(0);
+    const [openModalCodeGroupe, setOpenModalCodeGroupe] = React.useState(false)
+    const [sessions, setSession] = React.useState([])
+    const [timerC, setTimer] = React.useState()
 
 
     useEffect(() => {
+      setTimer(undefined)
       setQList([])
       setQuestion("")
       setReponse("")
@@ -141,19 +178,52 @@ export default function LiveUser({module,token}){
       setErreurMsg('')
       setProgress(0)
 
+      if (socket == undefined){
+        const sock =  io(ConfigData.SERVER_URL)
+        sock.on('addQuestion', addQuestion); 
+        sock.on('already', already); 
+        setSocket(sock)
+         
+      }
+
+      return(() => {
+        
+        clearInterval(timerC)
+       
+    })
+
       }, [module,updater]);
 
     
+      const handleCloseCodeGroupe = async() => {
+        setOpenModalCodeGroupe(false)
+      }
  
- 
+      const handleCloseandJoin = () =>{
+        setUpdater(updater+1)
+        const sock =  io(ConfigData.SERVER_URL)
+        sock.on('addQuestion', addQuestion); 
+        sock.on('already', already); 
+        setSocket(sock)
+
+        console.log("join ",titre)
+        socket.emit('join', {"name":"", "room":titre,"token":token,"module":module})
+        setOpenModalCodeGroupe(false)
+        setOpenLiveModal(true)
+
+      }
+
     const handleSend =()=>{
         
 
         socket.emit('liveReponse',{"name":"", "room":titre,"token":token,"module":module,"question":question,"reponse":reponse})
+
     }
 
     const handleCloseLiveModal =()=>{
+      console.log("close live")
       setOpenLiveModal(false)
+      clearInterval(timerC);
       socket.disconnect()
     }
     
@@ -174,38 +244,43 @@ export default function LiveUser({module,token}){
 
 
       
-      const timer = setInterval(() => {
+       
+      var t = setInterval(() => {
+        
         setProgress((oldProgress) => {
           var e = questionList[questionList.length-1]
           console.log("map",Math.round(new Date().getTime()/1000),e.dateO,e.dateF,0,100)
-          var x = parseInt(map(Math.round(new Date().getTime()/1000),e.dateO,e.dateF,0,100))
-          console.log("progress ",x)
+          var x = parseFloat(map(Math.round(new Date().getTime()/1000),e.dateO,e.dateF,0,100))
+
+          console.log("map",Math.round(new Date().getTime()/1000),e.dateO,e.dateF,0,100,"x",x)
           if(x>=100){
+            console.log("Temps ecoulé ")
             setErreur(true)
             setErreurMsg("Temps ecoulé")
+            console.log("--------------- clear ---------------")
+            clearInterval(t);
           }
           return Math.min(x, 100);
         });
-
+        console.log("progress ",progress)
+        
       }, 1000);
-      
+
+      setTimer(t)
+
 
     }
    const handleStart =()=>{
-    
-    const sock =  io(ConfigData.SERVER_URL)
-    sock.emit('join', {"name":"", "room":titre,"token":token,"module":module})
-    sock.on('addQuestion', addQuestion); 
-    sock.on('already', already); 
     setUpdater(updater+1)
-    
-    setSocket(sock)
+   
    }
 
 
-      const handlLive = e => {
-          
-          setOpenLiveModal(true)
+      const handlLive = async()  => {
+        var rep = await getCodeLive(module,token)
+        console.log('live ',rep)
+        setSession(rep)
+        setOpenModalCodeGroupe(true)
 
       }
    
@@ -233,16 +308,8 @@ export default function LiveUser({module,token}){
         fullWidth={true}
       >
         <DialogTitle id="alert-dialog-title">
-         Live session  
-         <TextField id="standard-basic" label="ID?" variant="standard" sx={{width:"95%"}} 
-          value={titre}
-          onChange={(event) => {
-            setTitre(event.target.value);
-          }}
-           />
-           {
-             socket==undefined?<Button variant="outlined"  onClick={handleStart} sx={{width:"10%"}}>Rejoindre</Button>:<></>
-           }
+         Live session  {titre}
+         
         </DialogTitle>
       
         <DialogContent dividers>
@@ -278,6 +345,73 @@ export default function LiveUser({module,token}){
           <Button onClick={handleCloseLiveModal}>Fermer</Button>
         </DialogActions>
       </Dialog>
+
+
+      <Dialog
+        open={openModalCodeGroupe}
+        onClose={handleCloseCodeGroupe}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Session live
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            <Box
+            
+            sx={{
+              mx: 'auto',
+              width: 400,
+              p: 1,
+              m: 1,
+              bgcolor: (theme) =>
+                theme.palette.mode === 'dark' ? '#101010' : 'grey.50',
+              color: (theme) =>
+                theme.palette.mode === 'dark' ? 'grey.300' : 'grey.800',
+              border: '1px solid',
+              borderColor: (theme) =>
+                theme.palette.mode === 'dark' ? 'grey.800' : 'grey.300',
+              borderRadius: 2,
+              textAlign: 'center',
+              fontSize: '0.875rem',
+              fontWeight: '700',
+            }}
+            >
+            Selectionner une session :  
+
+            <FormControl fullWidth>
+        <InputLabel id="demo-simple-select-label">Session</InputLabel>
+        <Select
+          labelId="demo-simple-select-label"
+          id="demo-simple-select"
+          value={titre}
+          onChange={(event) => {
+            setTitre(event.target.value);
+          }}
+          label="Session"
+           
+        >
+         {
+           sessions.map((i)=>(
+            <MenuItem value={i.room}>{i.module.name} - {i.titre}</MenuItem>
+           ))
+         }
+        </Select>
+      </FormControl>
+
+           
+            </Box>
+          </DialogContentText>
+        </DialogContent>
+        
+        <DialogActions>
+        <Button onClick={handleCloseandJoin}>Rejoindre</Button>
+
+          <Button onClick={handleCloseCodeGroupe}>Fermer</Button>
+        </DialogActions>
+      </Dialog>
+
         </>
     )
 }

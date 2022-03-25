@@ -20,7 +20,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import { green } from '@mui/material/colors';
+import { green , yellow, grey } from '@mui/material/colors';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import ConfigData from '../../../../../utils/configuration.json';
@@ -45,15 +45,42 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import LinearProgress from '@mui/material/LinearProgress';
 import PropTypes from 'prop-types';
 import { PieChart, Pie, Sector, Cell, ResponsiveContainer } from 'recharts';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
+async function closeLive(streamID,token){
+  const requestOptions = {
+    method: 'GET',
+    mode: 'cors',
+    headers: {
+      'x-access-token': token.token,
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    }
+  }
+  const response =  await fetch(
+    ConfigData.SERVER_URL + '/live/close/'+streamID,
+    requestOptions
+  )
+
+}
 function LinearProgressWithLabel(props) {
+  var colorReward = grey[900]
+  if(props.rewardvalue!=undefined)
+    if(props.rewardvalue==1)
+      colorReward = yellow[900]
+      if(props.rewardvalue==2)
+      colorReward = grey[200]
+      if(props.rewardvalue>=3)
+      colorReward = yellow[400]
+      console.log("LinearProgressWithLabel",props.reward)
+
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <Box sx={{ width: '90%', mr: 1 }}>
+      <Box sx={{ width: '80%', mr: 1 }}>
         <LinearProgress variant="determinate" {...props} sx={{height:15}}/>
       </Box>
-      <Box sx={{ minWidth: 35 }}>
-        <Typography variant="button" color="text.secondary">{props.label}</Typography>
+      <Box sx={{ minWidth: 35 ,  }}>
+        <Typography  variant="button" color="text.secondary" sx={{fontSize: 20}}>{props.label} <IconButton sx={{color:colorReward, boxShadow: 2}} aria-label="upload picture" component="span" onClick={() =>{props.handleReward(props.reward,props.label)}}> <EmojiEventsIcon  /> </IconButton></Typography>
       </Box>
     </Box>
   );
@@ -94,7 +121,7 @@ function  map(value, istart, istop, ostart, ostop){
   return ostart + (ostop - ostart) * ((value - istart) / (istop - istart))
 }
 
-function GetReponseForm({index,item}){
+function GetReponseForm({handleReward,index,item}){
   if(item == undefined){
     console.log("GetReponseForm undef")
     return <></>
@@ -113,7 +140,11 @@ function GetReponseForm({index,item}){
     // x 100
     // v total
     Object.keys(item.occurence).forEach(key => {
-      var d = {name:key, value:item.occurence[key], normalizeValue:item.occurence[key]*100/item.reponses.length}
+      var d = {name:key, value:item.occurence[key], normalizeValue:item.occurence[key]*100/item.reponses.length, item:item}
+      item.reponses.forEach((e,i)=>{
+        if(e.reponse==d.name)
+          d.reward=e.reward
+      })
       data.push(d)
     });
 
@@ -159,6 +190,7 @@ function GetReponseForm({index,item}){
   
     for(var i=0;i<data.length;i++){
       data[i].normalizeValue2=map(data[i].normalizeValue, 0, data[0].normalizeValue, 0, 100)
+
     }
     console.log(data)
     
@@ -171,7 +203,7 @@ function GetReponseForm({index,item}){
       {
         data.map((i)=>(
             <Box sx={{ width: '100%' }}>
-            <LinearProgressWithLabel value={i.normalizeValue2} label={i.name} />
+            <LinearProgressWithLabel handleReward={handleReward} value={i.normalizeValue2} label={i.name} rewardvalue={i.reward} reward={item} />
           </Box>
         ))
       }
@@ -197,6 +229,30 @@ export default function Live({module,token}){
     const [value, setValue] = React.useState(2);
     const [refreshKey, setRefreshKey] = React.useState(0)
 
+    const handleReward = (param,label) =>{
+      console.log(param,label)
+      const newIds = questionList
+
+      newIds.forEach((element,i) => {
+        if(element.question == param.question){
+          newIds[i].reponses.forEach((e,j)=>{
+            if(e.reponse == label)
+              if (newIds[i].reponses[j].reward==undefined)
+                  newIds[i].reponses[j].reward = 1
+              else
+                  newIds[i].reponses[j].reward+=1
+          })
+        }
+        
+      });
+
+     setQuestionList(newIds)
+
+     console.log("handleReward list" , questionList)
+     setRefreshKey(oldKey => oldKey + 1)
+
+      
+    }
 
     const handleChange = (event) => {
       setChecked(event.target.checked);
@@ -207,7 +263,7 @@ export default function Live({module,token}){
     };
 
     useEffect(() => {
-      if(socket==undefined){      
+      if(socket==undefined){        
         if(titre!=""){
         const sock =  io(ConfigData.SERVER_URL)
         sock.emit('join', {"name":"Prof", "room":streamID,"titre":titre,"token":token,"module":module})
@@ -217,7 +273,15 @@ export default function Live({module,token}){
         }
       }
 
-      }, [module,refreshKey]);
+      if(!openLiveModal){
+        const closeL = async () => {
+          socket.disconnect();
+          await closeLive(streamID,token)
+          }
+          closeL()
+      }
+
+      }, [module,refreshKey,openLiveModal]);
 
     
  
@@ -279,12 +343,19 @@ export default function Live({module,token}){
         addReponse(questionList)
 
       }
-    const handleCloseLiveModal =()=>{
+    const handleErase = () =>{
+      setQuestionList([questionList[0]])
+    }
+    const handleCloseLiveModal =async ()=>{
       setOpenLiveModal(false)
       setQuestionList([])
+      setTitre("")
       setCurrentQuestion()
+      setQuestion('')
       socket.disconnect()
       setSocket(undefined)
+      closeLive(streamID,token)
+      setRefreshKey(oldKey => oldKey + 1)
     }
   
    const handleStart =()=>{
@@ -333,7 +404,7 @@ export default function Live({module,token}){
           }}
            />
            {
-             socket==undefined?<Button variant="outlined"  onClick={handleStart} sx={{width:"10%"}}>Start</Button>:<Button variant="outlined"  onClick={handleStart} sx={{width:"10%"}}>Stop</Button>
+             socket==undefined?<Button variant="outlined"  onClick={handleStart} sx={{width:"10%"}}>Start</Button>:<></>
            }
            
         </DialogTitle>
@@ -402,6 +473,9 @@ export default function Live({module,token}){
         <Box sx={{m:2}}>
           <Button variant="outlined" fullWidth onClick={handleSend} >Envoyer</Button>
           </Box>
+          <Box sx={{m:2}}>
+          <Button variant="outlined" fullWidth onClick={handleErase} >Effacer</Button>
+          </Box>
           </DialogContentText>
     </Item>
   </Grid>
@@ -414,7 +488,7 @@ export default function Live({module,token}){
       questionList.map((item,index)=>(
        
         <Box>
-            <GetReponseForm index={index} item={item}/>
+            <GetReponseForm handleReward={handleReward} index={index} item={item}/>
         </Box>
 
       ))
