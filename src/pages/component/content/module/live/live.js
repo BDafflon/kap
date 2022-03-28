@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect,useMemo  } from 'react'
 import * as React from 'react';
 // material-ui
 import { Avatar,Divider, Typography, Box, Button   } from '@mui/material';
@@ -46,6 +46,42 @@ import LinearProgress from '@mui/material/LinearProgress';
 import PropTypes from 'prop-types';
 import { PieChart, Pie, Sector, Cell, ResponsiveContainer } from 'recharts';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import ReactWordcloud from 'react-wordcloud';
+import DragAndDrop from "../../../ressources/editor/drag";
+import MarkdownPreview from '@uiw/react-markdown-preview';
+
+
+
+async function upload(file,token) {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const requestOptions = {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'x-access-token': token.token,
+      
+    },
+    body:formData
+  }
+
+  const response = await fetch(ConfigData.SERVER_URL + '/uploader', requestOptions);
+
+  if (!response.ok) {
+    localStorage.removeItem('token')
+    window.location.reload(false);
+  }
+  if(response.status==401){
+    localStorage.removeItem('token')
+    window.location.reload(false);
+  }
+  const result = await response.json()
+  if(result.type.includes("image")){
+    return "![img]("+ConfigData.SERVER_URL+result.path+")";
+  }
+  return "[Document]("+ConfigData.SERVER_URL+result.path+")";
+}
 
 async function closeLive(streamID,token){
   const requestOptions = {
@@ -140,13 +176,14 @@ function GetReponseForm({handleReward,index,item}){
     // x 100
     // v total
     Object.keys(item.occurence).forEach(key => {
-      var d = {name:key, value:item.occurence[key], normalizeValue:item.occurence[key]*100/item.reponses.length, item:item}
+      var d = {name:key, value:item.occurence[key], normalizeValue:item.occurence[key]*100/item.reponses.length, item:item, text:key}
       item.reponses.forEach((e,i)=>{
         if(e.reponse==d.name)
           d.reward=e.reward
       })
       data.push(d)
     });
+    console.log("data",item.question,":",data)
 
     
   if(item.type==1){//QCM
@@ -155,7 +192,7 @@ function GetReponseForm({handleReward,index,item}){
     console.log("data",data)
     return (
       <>
-      <Typography>Question {index}: {item.question}</Typography>
+      <> <Typography>Question {index}: </Typography> <MarkdownPreview  source={item.question}/> </>
      
       <ResponsiveContainer width="99%" aspect={3}>
       <PieChart width={400} height={400}>
@@ -182,7 +219,7 @@ function GetReponseForm({handleReward,index,item}){
   }
   if(item.type==2){
     if(data.length==0)
-    return <Typography>Question {index}: {item.question}</Typography>
+    return  <> <Typography>Question {index}: </Typography> <MarkdownPreview  source={item.question}/> </>
 
     data.sort(function(a, b) {
       return parseFloat(b.normalizeValue) - parseFloat(a.normalizeValue);
@@ -192,14 +229,13 @@ function GetReponseForm({handleReward,index,item}){
       data[i].normalizeValue2=map(data[i].normalizeValue, 0, data[0].normalizeValue, 0, 100)
 
     }
-    console.log(data)
     
      
     //x nb
     //y 100
     return(
       <>
-      <Typography>Question {index}: {item.question}</Typography>
+      <> <Typography>Question {index}: </Typography> <MarkdownPreview  source={item.question}/> </>
       {
         data.map((i)=>(
             <Box sx={{ width: '100%' }}>
@@ -212,10 +248,57 @@ function GetReponseForm({handleReward,index,item}){
     )
 
   }
+  if(item.type==4){
+    const size = [600, 400];
+    const options = {
+      colors: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"],
+  enableTooltip: true,
+  deterministic: false,
+  fontFamily: "impact",
+  fontSizes: [40, 100],
+  fontStyle: "normal",
+  fontWeight: "normal",
+  padding: 1,
+  rotations: 2,
+  rotationAngles: [0, 90],
+  scale: "sqrt",
+  spiral: "archimedean",
+  transitionDuration: 1000
+    };
+    return(
+      <>
+            <> <Typography>Question {index}: </Typography> <MarkdownPreview  source={item.question}/> </>
+
+      <div style={{ width: "100%", height: "100%" }}>
+      <ReactWordcloud words={data} options={options} size={size} />
+      </div>
+      </>
+    ) 
+  }
   return <></>
 }
 
+function GetAllReponseForm({questionList,handleReward}){
+  {
+    console.log("GetAllReponseForm")
+    return(
+    <>
+    {questionList.map((item,index)=>(
+     
+      <Box>
+          <GetReponseForm handleReward={handleReward} index={index} item={item}/>
+      </Box>
+
+    ))
+  }
+    </>
+    )
+
+  }
+}
+
 export default function Live({module,token}){
+  console.log("module live",module)
     const [currentQuestion, setCurrentQuestion] = React.useState({question:"",reponses:[]})
     const [questionList, setQuestionList] = React.useState([])
     const [openLiveModal, setOpenLiveModal] = React.useState(false)
@@ -226,11 +309,11 @@ export default function Live({module,token}){
     const [question, setQuestion] = React.useState("");
     const [titre, setTitre] = React.useState("");
     const [checked, setChecked] = React.useState(true);
-    const [value, setValue] = React.useState(2);
+    const [value2, setValue2] = React.useState(2);
     const [refreshKey, setRefreshKey] = React.useState(0)
 
     const handleReward = (param,label) =>{
-      console.log(param,label)
+      console.log("handleReward")
       const newIds = questionList
 
       newIds.forEach((element,i) => {
@@ -255,14 +338,17 @@ export default function Live({module,token}){
     }
 
     const handleChange = (event) => {
+      console.log("handleChange")
       setChecked(event.target.checked);
     };
 
     const handleChangeQCM = (event) => {
-      setValue(event.target.value);
+      console.log("handleChangeQCM")
+      setValue2(event.target.value);
     };
 
     useEffect(() => {
+      console.log("useE")
       if(socket==undefined){        
         if(titre!=""){
         const sock =  io(ConfigData.SERVER_URL)
@@ -323,7 +409,7 @@ export default function Live({module,token}){
         
 
         qc.question=question
-        qc.type=value
+        qc.type=value2
         qc.option=option
         qc.reponses=[]
         qc.occurence={}
@@ -336,7 +422,7 @@ export default function Live({module,token}){
 
        
         console.log("click2",questionList)
-        socket.emit('liveQuestion',{"timer":t,"reponseunique":checked?1:0,"type":value,"option":option,"question":question,"token":token,"module":module,"room":streamID})
+        socket.emit('liveQuestion',{"timer":t,"reponseunique":checked?1:0,"type":value2,"option":option,"question":question,"token":token,"module":module,"room":streamID})
         console.log("click3",questionList)
         setCurrentQuestion({...qc})
         setRefreshKey(oldKey => oldKey + 1)
@@ -344,9 +430,11 @@ export default function Live({module,token}){
 
       }
     const handleErase = () =>{
+      console.log("handleErase")
       setQuestionList([questionList[0]])
     }
     const handleCloseLiveModal =async ()=>{
+      console.log("handleCloseLiveModal")
       setOpenLiveModal(false)
       setQuestionList([])
       setTitre("")
@@ -367,14 +455,29 @@ export default function Live({module,token}){
     
    }
       const handlLive = e => {
+        console.log('handlLive')
         setStreamID(module.id_module+"-"+makeid(5))
           setOpenLiveModal(true)
 
       }
    
- 
-    console.log("questionListMap",questionList)
-    return (
+      const handleDrop = async (files,e) => { 
+    
+        for (var i = 0; i < files.length; i++) {
+          if (!files[i].name) return
+          
+          let f = await upload(files[i],token)
+          var q =question
+          q=q+"\n"+f
+          setQuestion(q)
+
+        }
+         
+      } 
+
+    const qList = React.useMemo( () => <GetAllReponseForm questionList={questionList} handleReward={handleReward} /> , [refreshKey] );
+
+     return (
 
         <>
         
@@ -416,22 +519,29 @@ export default function Live({module,token}){
     <Item>
     <DialogContentText id="alert-dialog-description">
           <Typography>Question :</Typography>
-          <TextareaAutosize
-            aria-label="minimum height"
-            minRows={3}
-            value={question}
-            placeholder="Question"
-            style={{ width: "100%" }}
-            onChange={(event) => {
-                setQuestion(event.target.value);
-              }}
-          />
+          <DragAndDrop handleDrop={handleDrop}  id="q">
+                <TextareaAutosize 
+                id="question" 
+                placeholder="Question"
+                style={{ 'width': '100%'}} 
+                onChange={(event) => {
+                  console.log("onChange question")
+                    setQuestion(event.target.value);
+                  }} 
+                aria-label="minimum height"
+                minRows={3}
+                value={question}
+                
+                />
+                </DragAndDrop>
+
+           
           <Box style={{ width: "100%" }}s>
           <RadioGroup
         row
         aria-labelledby="demo-row-radio-buttons-group-label"
         name="row-radio-buttons-group"
-        value={value}
+        value={value2}
         onChange={handleChangeQCM}
         fullWidth
          
@@ -439,6 +549,7 @@ export default function Live({module,token}){
         <FormControlLabel value="1" control={<Radio />} label="QCM" />
         <FormControlLabel value="2" control={<Radio />} label="Occurrence" />
         <FormControlLabel value="3" control={<Radio />} label="Stream" />
+        <FormControlLabel value="4" control={<Radio />} label="Cloud" />
         <FormControlLabel control={
             <Checkbox defaultChecked checked={checked}
                       onChange={handleChange} />
@@ -450,6 +561,7 @@ export default function Live({module,token}){
         <TextField id="standard-basic" label="Option" variant="standard" fullWidth 
           value={option}
           onChange={(event) => {
+            console.log("onChange option")
             setOption(event.target.value);
           }}
            />
@@ -464,6 +576,7 @@ export default function Live({module,token}){
           label="Minutes and seconds"
           value={timer}
           onChange={(newValue) => {
+            console.log("onChange timer")
             setTimer(newValue);
           }}
           renderInput={(params) => <TextField {...params} variant="standard" />}
@@ -483,17 +596,7 @@ export default function Live({module,token}){
     <Item>
     <Stack spacing={2}> 
     
-    {
-      
-      questionList.map((item,index)=>(
-       
-        <Box>
-            <GetReponseForm handleReward={handleReward} index={index} item={item}/>
-        </Box>
-
-      ))
-
-    }
+    {qList}
       
     </Stack>
     </Item>

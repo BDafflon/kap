@@ -46,6 +46,8 @@ import LinearProgress from '@mui/material/LinearProgress';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
+import MarkdownPreview from '@uiw/react-markdown-preview';
+
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -335,7 +337,7 @@ export default function LiveUser({module,token}){
       
     </Box>
 
-      {question!=undefined?question.content:""}
+      {question!=undefined?<MarkdownPreview  source={question.content}/>:""}
        </Item>
   </Grid>
   </Grid>
