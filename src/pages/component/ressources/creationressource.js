@@ -215,8 +215,9 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
     var ressourceIdEdition={}
     ressourceIdEdition["update"]=false
     ressourceIdEdition.code= "0"
-    ressourceIdEdition.dateF=0
-    ressourceIdEdition.dateO=0
+    var newValue = new Date();
+    ressourceIdEdition.dateF= new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate())/1000
+    ressourceIdEdition.dateO= new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate())/1000
     ressourceIdEdition.groupe=[]
     ressourceIdEdition.idModule=-1
     ressourceIdEdition.name=""
@@ -298,7 +299,7 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
     
     var nbQ = (localStorage.getItem('nbQuestion')==null)  ?  0 : localStorage.getItem('nbQuestion')
     var qA = JSON.parse(localStorage.getItem('randomQuestion'))  
- 
+    nbQ = 0; //nbQ==undefined?0:nbQ
 
     console.log('submit', module, formControl, markdownText,typeForm,questionList)
     
@@ -435,10 +436,10 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
                     <MenuItem key='3' value='3'>
                       Devoir
                     </MenuItem>
-                    <MenuItem key='4' value='4'>
+                    <MenuItem key='5' value='5'>
                       TP/Compte rendu
                     </MenuItem>
-                    <MenuItem key='5' value='5'>
+                    <MenuItem key='4' value='4'>
                       Evaluation
                     </MenuItem>
                     
@@ -466,9 +467,11 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
                       fullWidth
                       label='Date Ouverture'
                       inputFormat="dd/MM/yyyy"
-                      value={formControl.dateO}
+                      value={formControl.dateO*1000}
                       onChange={newValue => {
-                        formControl.dateO = newValue.getTime()
+
+                        var t = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate())/1000
+                        formControl.dateO = t
                         setFormControl(formControl)
                         setUpdater(oldKey => oldKey + 1)
                       }}
@@ -479,19 +482,18 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
                 <Item>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <DatePicker
-                      fullWidth
-                      value={formControl.dateF}
-                      label='Date Fermeture'
-                       
-                      onChange={newValue => {
-                        console.log("formControl1",formControl)
-                        formControl.dateF = newValue.getTime()
-                        setFormControl(formControl)
-                        console.log("formControl2",formControl)
-                        setUpdater(oldKey => oldKey + 1)
-
-                      }}
-                      renderInput={params => <TextField {...params} />}
+                       fullWidth
+                       label='Date Fermeture'
+                       inputFormat="dd/MM/yyyy"
+                       value={formControl.dateF*1000}
+                       onChange={newValue => {
+ 
+                         var t = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate())/1000
+                         formControl.dateF = t
+                         setFormControl(formControl)
+                         setUpdater(oldKey => oldKey + 1)
+                       }}
+                       renderInput={params => <TextField {...params} />}
                     />
                   </LocalizationProvider>
                 </Item>

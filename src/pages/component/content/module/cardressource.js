@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import * as React from 'react';
 // material-ui
-import { Avatar,Divider, Box, Typography } from '@mui/material';
+import { Avatar, Divider, Box, Typography } from '@mui/material';
 import List from '@mui/material/List';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
@@ -23,13 +23,14 @@ import ListSubheader from '@mui/material/ListSubheader';
 // project imports
 import TypeRessource from '../../../../utils/typeressources';
 import ConfigData from '../../../../utils/configuration.json';
-
+import ModalRessource from './modalressource';
  
  
 
 
-async function getRessources (module,token) {
-  console.log("getRessources",module)
+async function getRessources (module,token, limit) {
+  
+  console.log("getRessources",module,limit)
   const requestOptions = {
     method: 'GET',
     mode: 'cors',
@@ -52,12 +53,17 @@ async function getRessources (module,token) {
     localStorage.removeItem('token')
     window.location.reload(false);
   }
+
   const result = await response.json()
   var data=[]
+  
+
   console.log("getRe",result)
   result.forEach(element => {
     data.push(element)
   });
+  if(limit != undefined)
+    return data.slice(0, limit)
   return data
 }
 
@@ -86,67 +92,54 @@ function GetDivider({index, size}){
     return <Divider/>
 }
 
-export default function CardRessource({data,token}){
+export default function CardRessource({data,token,limit,handleUpdater}){
     const [listRessource, setList] = React.useState([])
     const [openRessource, setOpen] = React.useState(false)
+    const [openModal, setOpenModal] = React.useState(false)
     const [ressource, setRessource] = React.useState({'titre':""})
     const [openAlert, setOpenAlert] = React.useState(false);
+    const [updater, setUpdater] = React.useState(0)
 
     useEffect(() => {
       const fetchData = async () => {
         if(data!= undefined){
           console.log("data",data)
-          var rep = await getRessources(data,token)   
+          var rep = await getRessources(data,token,limit)   
           setList(rep)    
         } 
 
       }
 
       fetchData()
-      }, [data]);
+      }, [data,updater]);
 
-    const handleRessource = param => e => {
+    const handleRessource = param => () => {
         console.log("handleRessource", param)
         setRessource(param)
-        setOpen(true);
+        //setOpen(true);
+        setOpenModal(true)
+        setUpdater(oldKey => oldKey + 1)
     }
 
     const closeModal=(p)=>(event, reason)=>{
       console.log('close Modal ',p)
       if (reason && reason == "backdropClick" || reason == "escapeKeyDown") 
         return;
+        setUpdater(oldKey => oldKey + 1)
+        handleUpdater(null)
+
         if(p==undefined || p==false)
           setOpenAlert(true);
         else
           setOpen(false);
+          
+
+          
     }
 
-    const handleClickOpenAlert = () => {
-        setOpenAlert(true);
-      };
     
-      const handleCloseAlert = () => {
-        setOpenAlert(false);
-        
-      };
 
-      const handleCloseAndQuitAlert= () => {
-        setOpenAlert(false);
-        setOpen(false);
-      };
 
-      const handleClose=  (event, reason) => {
-          console.log(reason)
-        if (reason && reason == "backdropClick" || reason == "escapeKeyDown") 
-        return;
-        console.log("data",ressource)
-        if(ressource.type >3 )
-          setOpenAlert(true);
-        else
-          setOpen(false);
-
-       
-      };
 
     return (
 
@@ -196,37 +189,9 @@ export default function CardRessource({data,token}){
 
         </Box>
         
-        <Dialog
-        fullWidth={true}
-        maxWidth="lg"
-        open={openRessource}
-        onClose={handleClose}
-        disableBackdropClick 
-      >
-        <DialogTitle>{ressource.titre}</DialogTitle>
+        <ModalRessource openP={openModal} data={ressource} updater={updater} token={token} handleClose={closeModal}/>
         
-        <DialogContent dividers>
-         <RessourceView data={ressource} token={token} handleClose={closeModal} />
-           
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Fermer</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={openAlert} onClose={handleCloseAlert}>
-        <DialogTitle>Confirmation</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Le contenu du formulaire ne sera pas sauvegardé
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAlert}>Revenir</Button>
-          <Button onClick={handleCloseAndQuitAlert}>Quitter</Button>
-        </DialogActions>
-      </Dialog>
-
+       
         </>
     )
 }

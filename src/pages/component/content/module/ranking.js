@@ -20,46 +20,31 @@ import Select from "@mui/material/Select";
 import Switch from "@mui/material/Switch";
 import RessourceView from "./ressourceview";
 import ListSubheader from "@mui/material/ListSubheader";
-import ConfigData from "../../../../utils/configuration.json";
-import TypeRessource from "../../../../utils/typeressources";
-import { green, pink } from "@mui/material/colors";
-
 // project imports
+import TypeRessource from "../../../../utils/typeressources";
+import ConfigData from "../../../../utils/configuration.json";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import IconButton from "@mui/material/IconButton";
+import { green, yellow, grey } from "@mui/material/colors";
+import ListItemIcon from "@mui/material/ListItemIcon";
 
-function getDate(d) {
-  if (d == 0) return <span>&#8734;</span>;
-  var a = new Date(d * 1000);
-  var months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  var year = a.getFullYear();
-  var month = months[a.getMonth()];
-  var date = a.getDate();
-  var hour = a.getHours();
-  var min = a.getMinutes();
-  var sec = a.getSeconds();
-  var time = date + " " + month + " " + year;
-  return time;
+function GetReward(props) {
+  var index = props.index + 1;
+  console.log("GetReward", index);
+  if (index > 3) return <Avatar>{index}</Avatar>;
+
+  var colorReward = grey[900];
+
+  if (index == 3) colorReward = yellow[900];
+  if (index == 2) colorReward = grey[200];
+  if (index == 1) colorReward = yellow[400];
+
+  return <EmojiEventsIcon sx={{ color: colorReward }} />;
 }
 
-function GetDivider({ index, size }) {
-  console.log("Div", index, size);
-  if (index == size) return <></>;
-  return <Divider />;
-}
-
-async function getActivity(data, token, limit) {
+async function getRank(module, token, limit) {
+  if (limit == undefined) limit = 5;
+  console.log("getRank", module, limit);
   const requestOptions = {
     method: "GET",
     mode: "cors",
@@ -70,7 +55,7 @@ async function getActivity(data, token, limit) {
     },
   };
   const response = await fetch(
-    ConfigData.SERVER_URL + "/ressources/stat/" + data.id_module + "/50",
+    ConfigData.SERVER_URL + "/rank/" + module.id_module,
     requestOptions
   );
   if (!response.ok) {
@@ -82,26 +67,47 @@ async function getActivity(data, token, limit) {
     localStorage.removeItem("token");
     window.location.reload(false);
   }
+
   const result = await response.json();
-  console.log("getActivity", result);
-  if (limit != undefined) return result.slice(0, limit);
-  return result;
+  var data = [];
+  console.log("getRank res", result);
+  if (result.index < limit) {
+    data = result.data.slice(0, limit);
+  } else {
+    data = result.data.slice(0, limit - 2);
+    data.push({
+      "auto-eval": "",
+      eval: "",
+      rank: "",
+      user: { firstname: "...", lastname: "..." },
+    });
+    data.push(result.data[result.index]);
+  }
+
+  return data;
 }
 
-export default function CardActivity({ data, token, limit }) {
-  const [listActivity, setList] = React.useState([]);
+function GetDivider({ index, size }) {
+  console.log("Div", index, size);
+  if (index == size) return <></>;
+  return <Divider />;
+}
+
+export default function Ranking({ data, token, limit, handleUpdater }) {
+  const [listRank, setRank] = React.useState([]);
+  const [updater, setUpdater] = React.useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       if (data != undefined) {
         console.log("data", data);
-        var rep = await getActivity(data, token, limit);
-        setList(rep);
+        var rep = await getRank(data, token, limit);
+        setRank(rep);
       }
     };
 
     fetchData();
-  }, [data]);
+  }, [data, updater]);
 
   return (
     <>
@@ -110,54 +116,46 @@ export default function CardActivity({ data, token, limit }) {
           sx={{ width: "100%", bgcolor: "background.paper" }}
           subheader={
             <ListSubheader component="div" id="nested-list-subheader">
-              Activité
+              Classement
             </ListSubheader>
           }
         >
-          {listActivity.map((item, index) => (
+          {listRank.map((item, index) => (
             <Box>
-              {console.log(
-                "item",
-                item.eval == undefined ? "" : item.eval.note
-              )}
-              <ListItemButton alignItems="flex-start">
-                <ListItemAvatar>
-                  {item.eval == undefined ? (
-                    <Avatar
-                      alt={TypeRessource(item.type_ressource)}
-                      src="/static/images/avatar/1.jpg"
-                    />
-                  ) : (
-                    <Avatar
-                      sx={{ bgcolor: green[500] }}
-                      alt={item.eval.note + ""}
-                      src="/static/images/avatar/1.jpg"
-                    />
-                  )}
-                </ListItemAvatar>
+              <ListItemButton>
+                <ListItemIcon>
+                  <GetReward index={index} />
+                </ListItemIcon>
                 <ListItemText
-                  primary={
-                    "[" +
-                    TypeRessource(item.type_ressource) +
-                    "]: " +
-                    item.titre
-                  }
+                  primary={item.user.firstname + " " + item.user.lastname}
                   secondary={
                     <React.Fragment>
+                      <Typography
+                        sx={{ display: "inline", fontWeight: 800 }}
+                        component="span"
+                        variant="button"
+                        display="block"
+                        gutterBottom
+                      >
+                        {item.eval + item["auto-eval"]}
+                      </Typography>
                       <Typography
                         sx={{ display: "inline" }}
                         component="span"
                         variant="body2"
                         color="text.primary"
                       >
-                        le {getDate(item.dateO)} :{" "}
-                        {((item.dateF - item.dateO) / 60).toFixed(2)} min
+                        {" [Evaluation: " +
+                          item.eval +
+                          " / Auto-Evaluation: " +
+                          item["auto-eval"] +
+                          "]"}
                       </Typography>{" "}
                     </React.Fragment>
                   }
                 />
               </ListItemButton>
-              <GetDivider index={index + 1} size={listActivity.length} />
+              <GetDivider index={index + 1} size={listRank.length} />
             </Box>
           ))}
         </List>
