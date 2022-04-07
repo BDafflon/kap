@@ -13,6 +13,7 @@ class RessourceLive(db.Model):
     id_owner = db.Column(db.Integer)
     titre = db.Column(db.String(255))
     room = db.Column(db.String(255))
+    public_key = db.Column(db.String(255))
     def serialize(self):
         return {
             'id':self.id,
@@ -22,6 +23,7 @@ class RessourceLive(db.Model):
             'room':self.room,
             'dateO': self.dateO,
             'dateF': self.dateF,
+            'public_key':self.public_key,
         }
 
 
@@ -37,9 +39,11 @@ class RessourceLiveDetail(db.Model):
     dateO = db.Column(db.Integer)
     dateF = db.Column(db.Integer)
     id_user=db.Column(db.Integer)
+    public_id=db.Column(db.String(255))
     def serialize(self):
         return {
             'id':self.id,
+            "public_id":self.public_id,
             'id_module':self.id_module,
             'id_user':self.id_user,
             'id_live':self.id_live,
@@ -319,7 +323,7 @@ class User(db.Model):
 
     def serialize(self):
         return {
-            'id':self.public_id,
+            'id':self.id,
             'firstname':self.firstname,
             'lastname':self.lastname,
             'mail':self.mail,
