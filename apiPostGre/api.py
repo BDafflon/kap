@@ -4,6 +4,7 @@ import shutil
 from flask import Flask, render_template, request, jsonify, make_response, send_file
 from flask_migrate import Migrate
 from flask_socketio import SocketIO, send, join_room, leave_room, emit, rooms
+from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 import jwt
@@ -71,10 +72,11 @@ def token_required(f):
 
 @socketio.on('join')
 def on_join(data):
-    print("Joining!")
+    print("Joining!",request)
     print('on_join!', data)
     token = data["token"]["token"]
     dataId = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+    print('on_join',dataId)
     current_user = User.query.filter_by(id=dataId['id']).first()
     if current_user.rank == 0:
         live = RessourceLive(titre=data["titre"])
@@ -85,50 +87,96 @@ def on_join(data):
         db.session.add(live)
         db.session.commit()
     join_room(data["room"])
+    emit('addClient', {'name': current_user.firstname+" "+current_user.lastname,'id':dataId['id']}, broadcast=True, room=data["room"])
+
+
+
+
+
+@socketio.on('reward')
+def on_reward(data):
+    print("reward",data)
+    for d in data['reponsesList']:
+        reponse = RessourceLiveParticipation.query.filter_by(content=d['content'],id_RessourceLiveDetail=d["id_RessourceLiveDetail"],id_user=d['id_user']).first()
+        if reponse is not None:
+            reponse.reward=d["reward"]
+            db.session.commit()
+            print("r",reponse.serialize())
+            emit('getReward',reponse.serialize(),broadcast=True, room=data["room"])
+
+
+@socketio.on('joinpublic')
+def on_join_public(data):
+    print("Joining!")
+    print('on_join!', data)
+    pkey = data["publickey"]
+    live = RessourceLive.query.filter_by(public_key=pkey).first()
+    if live is not None:
+        join_room(live.room)
+        emit("joinpublic",{"titre":live.titre, "room":live.room})
+        emit('addClient',{'name':"visiteur "+str(data["name"])},broadcast=True, room=live.room)
 
 
 
 
 
 
-@socketio.on('disconnect')
+
+@socketio.on('leaving')
 def on_leave():
     print('disconnection!')
 
 @socketio.on('liveReponse')
 def on_liveReponse(data):
     print("liveReponse",data)
-    token = data["token"]["token"]
-    dataId = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-    current_user = User.query.filter_by(id=dataId['id']).first()
-    if current_user is not None:
-        detail = RessourceLiveDetail.query.filter_by(id=data["question"]['id']).first()
-        if detail is not None:
-            if detail.dateF > datetime.datetime.now().timestamp():
-                live = RessourceLive.query.filter_by(room=data["room"]).first()
-                if live is not None:
-                    if detail.reponseunique==1:
-                        print("rep unique ",data["question"])
-                        rep = RessourceLiveParticipation.query.filter_by(id_RessourceLiveDetail=data["question"]['id'],id_user=dataId['id']).all()
-                        print("rep unique ",len(rep),dataId['id'])
-                        if len(rep)!=0:
-                            emit("already", dataId['id'], broadcast=True, room=data["room"])
-                            return
+    dataId={}
+    current_user=None
+    if data["visiteurID"]!="":
+        print("public rep")
+        dataId['id']=data["visiteurID"]
+    else:
+        token = data["token"]["token"]
+        dataId = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        current_user = User.query.filter_by(id=dataId['id']).first()
+        if current_user is None:
+            return jsonify({"msg":"Erreur user"})
+    detail = RessourceLiveDetail.query.filter_by(id=data["question"]['id']).first()
+    if detail is not None:
+        if detail.dateF > datetime.datetime.now().timestamp():
+            live = RessourceLive.query.filter_by(room=data["room"]).first()
+            if live is not None:
+                if detail.reponseunique==1:
+                    print("rep unique ",data["question"])
+                    rep = RessourceLiveParticipation.query.filter_by(id_RessourceLiveDetail=data["question"]['id'],id_user=dataId['id']).all()
+                    print("rep unique ",len(rep),dataId['id'])
+                    if len(rep)!=0:
+                        emit("already", {'id':dataId['id']},  room=data["room"])
+                        return
+
+                rep = RessourceLiveParticipation.query.filter_by(id_RessourceLiveDetail=data["question"]['id'],id_user=dataId['id'],content=data["reponse"]).all()
+                if len(rep)!=0 :
+                    print("spam",rep)
+                    emit("already", {'id': dataId['id']}, room=data["room"])
+                    return
 
 
-                    reponse = RessourceLiveParticipation(id_RessourceLiveDetail=data["question"]['id'])
-                    reponse.id_module = data["module"]['id_module']
-                    reponse.content = data["reponse"]
-                    reponse.id_user = dataId['id']
-                    reponse.dateO=datetime.datetime.now().timestamp()
-                    db.session.add(reponse)
-                    db.session.commit()
+                reponse = RessourceLiveParticipation(id_RessourceLiveDetail=data["question"]['id'])
+                reponse.id_module = data["question"]['id_module']
+                reponse.content = data["reponse"]
+                reponse.id_user = dataId['id']
+                reponse.dateO=datetime.datetime.now().timestamp()
+                reponse.reward=0
+                db.session.add(reponse)
+                db.session.commit()
 
-                    rs = reponse.serialize()
-                    rs["question"] = data["question"]
-                    rs["user"]=User.query.filter_by(id=dataId['id']).first().serialize()
-                    print("send rép")
-                    emit("addReponse", rs, broadcast=True, room=data["room"])
+                rs = reponse.serialize()
+                rs["question"] = data["question"]
+
+                if current_user is not None:
+                    rs["user"]=current_user.serialize()
+                print("send rép",rs)
+                emit("addReponse", rs, broadcast=True, room=data["room"])
+                emit('reponseValide',rs,broadcast=True, room=data["room"])
 
 
 
@@ -150,6 +198,7 @@ def on_liveQuestion(data):
             detail.option=data["option"]
             detail.type = data["type"]
             detail.reponseunique = data["reponseunique"]
+            detail.public_id = data["randomID"]
             detail.dateO=datetime.datetime.now().timestamp()
             detail.dateF=datetime.datetime.now().timestamp()+data["timer"]
             db.session.add(detail)
@@ -257,6 +306,26 @@ def ressource_evaluation_participation(current_user):
 
 
 
+@app.route('/openlive', methods=['POST'])
+@token_required
+def openLive(current_user):
+    print("openlive",request.json)
+    if current_user.rank != 0:
+        return make_response('Could not verify', 405, {'WWW-Authenticate': 'Basic realm="Admin required!"'})
+
+
+    live = RessourceLive.query.filter_by(room=request.json.get("live")).first()
+    print(live)
+    if live is not None:
+        if bool(request.json.get("open")):
+            live.public_key=request.json.get("publickey")
+        else:
+            live.public_key = ""
+        db.session.commit()
+        return jsonify(live.serialize())
+    return jsonify({})
+
+
 
 @app.route('/live/close/<id>', methods=['GET'])
 @token_required
@@ -346,8 +415,12 @@ def ressource_evaluation_registration(current_user):
         ressource.titre = titre
         ressource.dateO = dateO
         ressource.dateF = dateF
-        ressource.questionAleatoire = bool(request.json.get('questionAleatoire'))
+        ressource.questionAleatoire = 0
+        if bool(request.json.get('questionAleatoire')):
+            ressource.questionAleatoire = 1
         ressource.nbQuestion = request.json.get('nbQuestion')
+        ressource.timer=0
+
         db.session.add(ressource)
         db.session.commit()
         keysList = request.json.keys()
@@ -364,7 +437,9 @@ def ressource_evaluation_registration(current_user):
                 question.indice = q["indice"]
                 question.barem = q["barem"]
                 question.rating = q["rating"]
-                question.requis = q["Requis"]
+                question.requis = 0
+                if q["Requis"]:
+                    question.requis = 1
                 if "formats" in keysListquestion:
                     question.formats = q["formats"]
                 if "size" in keysListquestion:
@@ -401,7 +476,7 @@ def get_ressource_stats(current_user,id,limit):
             ressource = RessourceText.query.filter_by(id=s.id_ressource).first()
         else:
             ressource = RessourceQestions.query.filter_by(id=s.id_ressource).first()
-            eval = Evaluation.query.filter(Evaluation.date_eval>=s.dateO,Evaluation.date_eval<=s.dateF, Evaluation.id_ressourceqestions==ressource.id,Evaluation.id_user==current_user.id,).first()
+            eval = Evaluation.query.filter(Evaluation.date_eval>=s.dateO,Evaluation.date_eval<=s.dateF, Evaluation.id_ressourceqestions==ressource.id,Evaluation.id_user==current_user.id).first()
             if eval is not None:
                 if eval.note is not None:
                     ss["eval"]=eval.serialize()
@@ -598,7 +673,7 @@ def ressource_registration(current_user):
         ressource = RessourceText(id_owner=id_owner)
         ressource.id_module=id_module
         ressource.groupes=groupes
-        ressource.type=type
+        ressource.type=str(type)
         ressource.titre=titre
         ressource.content = content
         ressource.dateO=dateO
@@ -826,6 +901,63 @@ def get_all_modules(current_user,id):
 
     return jsonify({'modules' : output})
 
+
+
+
+@app.route('/mesexams', methods=['GET'])
+@token_required
+def get_my_exam(current_user):
+    data = {}
+    if current_user.groupe is not None:
+        groupesId = [int(i) for i in current_user.groupe.split(';') if len(i)>0]
+
+        for g in groupesId:
+            affectations = Affectation.query.filter_by(id_groupe=g).all()
+            for a in affectations:
+                item = []
+                ressurces = RessourceQestions.query.order_by(RessourceQestions.dateO.desc()).filter_by(id_module=a.id_module,type="4").all()
+                for r in ressurces:
+                    d = {}
+                    rs = r.serialize()
+
+                    questions = Question.query.order_by(Question.order.asc()).filter_by(id_ressourceqestions=r.id).all()
+                    content = []
+                    for q in questions:
+                        content.append(q.serialize())
+                    rs["content"] = content
+
+                    d["ressource"] = rs
+
+                    evaluation = Evaluation.query.filter_by(id_user=current_user.id,id_ressourceqestions=r.id).first()
+                    if evaluation is not None:
+                        d["evaluation"] = evaluation.serialize()
+
+                    item.append(d)
+                data[a.id_module]=item
+
+    return jsonify(data)
+
+
+@app.route('/mesdevoirs', methods=['GET'])
+@token_required
+def get_my_homeworks(current_user):
+    data = {}
+    if current_user.groupe is not None:
+        groupesId = [int(i) for i in current_user.groupe.split(';') if len(i)>0]
+
+        for g in groupesId:
+            affectations = Affectation.query.filter_by(id_groupe=g).all()
+            for a in affectations:
+                item = []
+                ressurces = RessourceText.query.order_by(RessourceText.dateF.desc()).filter_by(id_module=a.id_module,type="3").all()
+                for r in ressurces:
+
+                    if r.dateF+(3600*24) >= datetime.datetime.now().timestamp():
+                        item.append(r.serialize())
+                data[a.id_module]=item
+
+    return jsonify(data)
+
 @app.route('/mesmodules', methods=['GET'])
 @token_required
 def get_my_modules(current_user):
@@ -846,6 +978,25 @@ def get_my_modules(current_user):
         data.append(m.serialize())
 
 
+
+    return jsonify({'modules' : data})
+
+
+@app.route('/mesmodules/<int:id>', methods=['GET'])
+@token_required
+def get_my_modules_id(current_user,id):
+    data = []
+    if current_user.groupe is not None:
+        groupesId = [int(i) for i in current_user.groupe.split(';') if len(i)>0]
+
+        for g in groupesId:
+            affectation = Affectation.query.filter_by(id_groupe=g).all()
+
+            for a in affectation:
+                modules = Module.query.filter_by(id=a.id_module).all()
+                for m in modules:
+                    if m.id==id:
+                        data.append(m.serialize())
 
     return jsonify({'modules' : data})
 
@@ -891,6 +1042,50 @@ def modules_update(current_user):
         return jsonify({})
 
 
+
+
+@app.route('/rank/<int:id>', methods=['GET'])
+@token_required
+def get_Rank(current_user,id):
+    print("rank")
+    if id is not None:
+        dataEval={}
+        dataAutoEval={}
+        user=[]
+        data=[]
+        evals = db.session.query(Evaluation.id_user, Evaluation.id_ressourceqestions, Evaluation.id_module, func.sum(Evaluation.note)).filter_by(id_module=id).group_by(Evaluation.id_user,Evaluation.id_ressourceqestions, Evaluation.id_module).all()
+        for e in evals:
+            ressource = RessourceQestions.query.filter_by(id=e.id_ressourceqestions).first()
+            print("ressource",ressource)
+            if ressource is not None:
+                user.append(e[0])
+                if ressource.type=="4":
+                    dataEval[e.id_user]=e[3]
+                else:
+                    dataAutoEval[e.id_user]=e[3]
+
+        print(dataEval,dataAutoEval)
+        user = list(dict.fromkeys(user))
+        for u in user:
+            r=[0,0]
+            if u in dataEval.keys():
+                r[0]=dataEval[u]
+            if u in dataAutoEval.keys():
+                r[1]=dataAutoEval[u]
+
+            item={"rank":sum(r),"auto-eval":r[1],'eval':r[0],"user":User.query.filter_by(id=u).first().serialize()}
+            data.append(item)
+
+        print(data)
+        data.sort(key=lambda x: x["rank"], reverse=True)
+        for index, item in enumerate(data):
+            if item["user"]["id"] == current_user.id:
+                break
+        else:
+            index = -1
+        print(data)
+
+    return jsonify({"data":data,"index":index})
 
 @app.route('/affectation/del/<int:id>', methods=['DELETE'])
 @token_required
@@ -1091,11 +1286,14 @@ def configuration():
     u.password = generate_password_hash("azerty")
     u.rank = 0
     db.session.add(u)
+
+    u2 = User(mail="etu@gmp.fr")
+    u2.password = generate_password_hash("azerty")
+    u2.rank = 0
+    db.session.add(u2)
     db.session.commit()
     return jsonify({"message":"ok"})
 
 
 if __name__ == '__main__':
-    #powershell  : $env:FLASK_APP = api.py
-    #CMD set FLASK_APP=api.py
     socketio.run(app, debug=True)
