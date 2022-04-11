@@ -782,6 +782,7 @@ def get_all_groupes_module(current_user,id):
                 if str(a.id_groupe) in u.groupe.split(";"):
                     userData.append(u.serialize())
         item["users"]=userData
+        item["formation"]=Formation.query.filter_by(id=a.id_formation).first().serialize()
         item["groupe"]=groupe.serialize()
         item["affectation"]=a.serialize()
         output.append(item)
@@ -867,7 +868,9 @@ def get_all_groupes():
     groupes = Groupe.query.all()
     output = []
     for g in groupes:
-        output.append(g.serialize())
+        gs = g.serialize()
+        gs['formation'] = Formation.query.filter_by(id=g.id_formation).first().serialize()
+        output.append(gs)
 
     return jsonify({'groupes' : output})
 
@@ -1296,4 +1299,7 @@ def configuration():
 
 
 if __name__ == '__main__':
+    #powershell  : $env:FLASK_APP = api.py
+    #CMD set FLASK_APP=api.py
+    #error : flask db revision --rev-id c555609ffc5c
     socketio.run(app, debug=True)

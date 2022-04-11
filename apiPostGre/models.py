@@ -2,6 +2,27 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+class Absence(db.Model):
+    __tablename__ ='absence'
+    id = db.Column(db.Integer, primary_key=True)
+    id_module = db.Column(db.Integer)
+    dateO = db.Column(db.Integer)
+    id_user_etu=db.Column(db.Integer)
+    id_user_prof=db.Column(db.Integer)
+    motif = db.Column(db.String(255))
+    type = db.Column(db.Integer)
+    def serialize(self):
+        return {
+            'id': self.id,
+            'id_module': self.id_module,
+            'dateO': self.dateO,
+            "id_user_etu": self.id_user_etu,
+            'id_user_prof': self.id_user_prof,
+            'motif': self.motif,
+            'type': self.type,
+        }
+
+
 
 
 class RessourceLive(db.Model):
