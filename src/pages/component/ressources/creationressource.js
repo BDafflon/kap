@@ -40,14 +40,14 @@ async function getMedia (token) {
   if (!response.ok) {
     localStorage.removeItem('token')
     window.location.reload(false);
-    console.log(response)
+    //console.log(response)
   }
   if (response.status == 401) {
     localStorage.removeItem('token')
     window.location.reload(false);
   }
   const result = await response.json()
-  console.log('getMedia', result)
+  //console.log('getMedia', result)
   return result
 }
 
@@ -101,7 +101,7 @@ async function editionRessource (
     window.location.reload(false);
   }
   const result = await response.json()
-  console.log(result)
+  //console.log(result)
   return result
 }
 
@@ -153,7 +153,7 @@ async function registrationRessource (
     window.location.reload(false);
   }
   const result = await response.json()
-  console.log(result)
+  //console.log(result)
   return result
 }
 
@@ -167,7 +167,7 @@ const Item = styled(Paper)(({ theme }) => ({
 
 
 function save (question,nbQuestion,randomQuestion) {
-  console.log('save', question)
+  //console.log('save', question)
   localStorage.setItem('questionSave', JSON.stringify(question))
   localStorage.setItem('nbQuestion', JSON.stringify(nbQuestion))
   localStorage.setItem('randomQuestion', JSON.stringify(randomQuestion))
@@ -228,7 +228,7 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
   }
   else{
     ressourceIdEdition["update"]=true
-    console.log("code",ressourceIdEdition.content)
+    //console.log("code",ressourceIdEdition.content)
     if(ressourceIdEdition.code >3){
       for(var i=0; i<ressourceIdEdition.content.length;i++){
         ressourceIdEdition.content[i]["iddb"]=ressourceIdEdition.content["id"]
@@ -236,13 +236,13 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
       }
       
     }
-    console.log("code",ressourceIdEdition.content)
+    //console.log("code",ressourceIdEdition.content)
   }
 
   
 
 
-  console.log("ressourceIdEdition",ressourceIdEdition)
+  //console.log("ressourceIdEdition",ressourceIdEdition)
  
   const [editionStat, setEdition] = useState(ressourceIdEdition)
   const [lastFocus, setLastFocus] = useState()
@@ -276,14 +276,14 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
   const [typeForm, setTypeForm] = React.useState(ressourceIdEdition.code)
 
   const handleLastFocus = param => e => {
-    console.log('handleLastFocus', param)
+    //console.log('handleLastFocus', param)
     
     setLastFocus(param)
   }
 
   const handleMediaRefresh = async m => {
     setMedia(await getMedia(token))
-    console.log('handleMediaRefresh :', medias)
+    //console.log('handleMediaRefresh :', medias)
   }
   const handleType = event => {
     const {
@@ -291,7 +291,7 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
     } = event
 
     setTypeForm(value)
-    console.log('handleType', formControl)
+    //console.log('handleType', formControl)
   }
 
   const handleSubmit = async event => {
@@ -301,7 +301,7 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
     var qA = JSON.parse(localStorage.getItem('randomQuestion'))  
     nbQ = 0; //nbQ==undefined?0:nbQ
 
-    console.log('submit', module, formControl, markdownText,typeForm,questionList)
+    //console.log('submit', module, formControl, markdownText,typeForm,questionList)
     
     if(ressourceIdEdition["update"]){
       var rep = await editionRessource(
@@ -327,13 +327,13 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
       qA
     )
     }
-    console.log(rep)
+    //console.log(rep)
     localStorage.removeItem('questionSave')
     window.location.reload(false);
   }
 
   const handleGroupeSelection = param => (e, val) => {
-    console.log('ckick Groupe', param, e, val)
+    //console.log('ckick Groupe', param, e, val)
     formControl.groupes = val
     setFormControl(formControl)
   }
@@ -357,14 +357,14 @@ export default function CreationRessource ({ token, module, groupe, ressourceIdE
 
   const handleMedia = param => e => {
     var f = ''
-    console.log("typeForm.typeForm ",typeForm )
+    //console.log("typeForm.typeForm ",typeForm )
     if (param.type == 'Document') {
       f = '[Document](' + ConfigData.SERVER_URL + '/media/' + param.id + ')'
     } else {
       f = '![img](' + ConfigData.SERVER_URL + '/media/' + param.id + ')'
     }
     if (typeForm <= 3) {
-      console.log("handleMedia",markdownText)
+      //console.log("handleMedia",markdownText)
       setMarkdownText(markdownText + '\n' + f + '\n')
     } else {
        if(lastFocus[1]=='question'){

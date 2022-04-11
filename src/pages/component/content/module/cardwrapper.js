@@ -64,7 +64,7 @@ const dataEx = [
 ]
 
 function GetCard ({ data }) {
-  console.log('card ', data)
+  //console.log('card ', data)
   if (data.type == 'text') {
     if (data.size == 'l') {
       return (
@@ -162,7 +162,7 @@ function GetCard ({ data }) {
       </Box>
     )
   }
-  console.log('err ', data)
+  //console.log('err ', data)
   return <></>
 }
 

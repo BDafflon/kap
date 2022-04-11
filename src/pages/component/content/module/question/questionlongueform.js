@@ -90,7 +90,7 @@ export default function QuestionLongueForm ({data,handleChild, index,type,correc
 
     return(
         <>
-        {console.log("QuestionLongueForm",data)}
+        {//console.log("QuestionLongueForm",data)}
         <Box sx={{  p: 2.25, boxShadow: 1 }}>
          
                   <Typography >{"Question N°:"+data.order} (Barem :{data.barem} / difficulté:{data.difficulte}) </Typography> 

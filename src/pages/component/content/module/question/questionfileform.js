@@ -34,9 +34,9 @@ async function uploadFile(name, file, token) {
     ConfigData.SERVER_URL + "/uploader",
     requestOptions
   );
-  console.log(response);
+  //console.log(response);
   if (!response.ok) {
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -136,7 +136,7 @@ export default function QuestionFileForm({
 
   return (
     <>
-      {console.log("QuestionFileForm", data)}
+      {//console.log("QuestionFileForm", data)}
       <Box sx={{ p: 2.25, boxShadow: 1 }}>
         <Typography>
           {"Question N°:" + data.order} (Barem :{data.barem} / difficulté:

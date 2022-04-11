@@ -40,10 +40,10 @@ export default function ModalRessource({data,openP,updater,token,closeModal}) {
   };
 
   const handleCloseM =  (event, reason) => {
-    console.log(reason)
+    //console.log(reason)
     if (reason && reason == "backdropClick" || reason == "escapeKeyDown") 
     return;
-    console.log("data",data)
+    //console.log("data",data)
     if(data.type >3 )
       setOpenAlert(true);
     else

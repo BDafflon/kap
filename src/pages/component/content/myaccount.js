@@ -45,7 +45,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import GroupIcon from "@mui/icons-material/Group";
 
 async function affectationGroupe(token, code) {
-  console.log("affectationGroupe", code, token);
+  //console.log("affectationGroupe", code, token);
   const formData = new FormData();
   formData.append("code", code);
 
@@ -66,7 +66,7 @@ async function affectationGroupe(token, code) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -109,7 +109,7 @@ async function getGroupes() {
 }
 
 async function trashGroup(token, groupe) {
-  console.log("trashGroup", groupe, token);
+  //console.log("trashGroup", groupe, token);
   const formData = new FormData();
   formData.append("groupe", groupe);
 
@@ -130,7 +130,7 @@ async function trashGroup(token, groupe) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -140,7 +140,7 @@ async function trashGroup(token, groupe) {
 }
 
 async function getUser(token) {
-  console.log("token ? ", token);
+  //console.log("token ? ", token);
   return fetch(ConfigData.SERVER_URL + "/user", {
     method: "GET",
     mode: "cors",
@@ -175,16 +175,16 @@ export default function MyAccount({ token, dashboardType }) {
   useEffect(() => {
     const getData = async () => {
       let response = await getFormation();
-      console.log("rep", response);
+      //console.log("rep", response);
       setData(response["formations"]);
 
       response = await getGroupes();
-      console.log("rep", response);
+      //console.log("rep", response);
       setGroupes(response["groupes"]);
 
       response = await getUser(token);
 
-      console.log("user", response);
+      //console.log("user", response);
       setUser(response);
     };
     getData();
@@ -239,7 +239,7 @@ export default function MyAccount({ token, dashboardType }) {
     onSubmit: async (values) => {
       values.formation = formationSelected.id;
       values.groupe = groupeSelected.id;
-      console.log("val", values);
+      //console.log("val", values);
 
       await registerUser(values);
 

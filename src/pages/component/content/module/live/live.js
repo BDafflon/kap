@@ -44,6 +44,12 @@ import ListSubheader from "@mui/material/ListSubheader";
 import { SignalCellularConnectedNoInternet3BarSharp } from "@mui/icons-material";
 import QRCode from "react-qr-code";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
+import { FullScreen } from "@chiragrupani/fullscreen-react";
+import Fab from '@mui/material/Fab';
+import FullScreenComponent from 'react-easyfullscreen'
+import FullscreenIcon from "@mui/icons-material/Fullscreen"
+
+
 
 const socket = io(ConfigData.SERVER_URL, {
   reconnection: true,
@@ -70,14 +76,14 @@ async function openLive(open, live, token, pKeys) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
     window.location.reload(false);
   }
   const result = await response.json();
-  console.log(result);
+  //console.log(result);
 }
 
 async function upload(file, token) {
@@ -134,7 +140,7 @@ function LinearProgressWithLabel(props) {
     if (props.rewardvalue == 1) colorReward = yellow[900];
   if (props.rewardvalue == 2) colorReward = grey[200];
   if (props.rewardvalue >= 3) colorReward = yellow[400];
-  console.log("LinearProgressWithLabel", props.reward);
+  //console.log("LinearProgressWithLabel", props.reward);
 
   return (
     <Grid
@@ -203,9 +209,9 @@ function map(value, istart, istop, ostart, ostop) {
 }
 
 function GetReponseForm({ handleReward, index, item }) {
-  console.log("GetReponseForm", item);
+  //console.log("GetReponseForm", item);
   if (item == undefined) {
-    console.log("GetReponseForm undef");
+    //console.log("GetReponseForm undef");
     return <></>;
   }
 
@@ -218,7 +224,7 @@ function GetReponseForm({ handleReward, index, item }) {
   var data = [];
   // x 100
   // v total
-  console.log("GetReponseForm occurence ", item.occurence);
+  //console.log("GetReponseForm occurence ", item.occurence);
   Object.keys(item.occurence).forEach((key) => {
     var d = {
       name: key,
@@ -229,7 +235,7 @@ function GetReponseForm({ handleReward, index, item }) {
     };
 
     item.reponses.forEach((e, i) => {
-      console.log("item.reponses ", e);
+      //console.log("item.reponses ", e);
       if (e.reponse.content == d.name) d.reward = e.reponse.reward;
     });
     data.push(d);
@@ -238,13 +244,13 @@ function GetReponseForm({ handleReward, index, item }) {
   if (item.type == 1) {
     //QCM
 
-    console.log("data", data);
+    //console.log("data", data);
     return (
       <>
         <>
           {" "}
           <Typography>Question {index}: </Typography>{" "}
-          <MarkdownPreview source={item.question} />{" "}
+          <MarkdownPreview source={"#"+item.question} />{" "}
         </>
 
         <ResponsiveContainer width="99%" aspect={3}>
@@ -281,7 +287,7 @@ function GetReponseForm({ handleReward, index, item }) {
         <>
           {" "}
           <Typography>Question {index}: </Typography>{" "}
-          <MarkdownPreview source={item.question} />{" "}
+          <MarkdownPreview source={"#"+item.question} />{" "}
         </>
       );
 
@@ -306,7 +312,7 @@ function GetReponseForm({ handleReward, index, item }) {
         <>
           {" "}
           <Typography>Question {index}: </Typography>{" "}
-          <MarkdownPreview source={item.question} />{" "}
+          <MarkdownPreview source={"# "+item.question} />{" "}
         </>
         {data.map((i) => (
           <Box sx={{ width: "100%" }}>
@@ -355,9 +361,9 @@ function GetReponseForm({ handleReward, index, item }) {
   return <></>;
 }
 
-function GetAllReponseForm({ reponsesList, questionList, handleReward }) {
+function GetAllReponseForm({ reponsesList, questionList, handleReward ,setFullScreen,isFullScreen}) {
   {
-    console.log("GetAllReponseForm", reponsesList, questionList);
+    //console.log("GetAllReponseForm", reponsesList, questionList);
 
     let data = JSON.parse(JSON.stringify(questionList));
 
@@ -371,17 +377,36 @@ function GetAllReponseForm({ reponsesList, questionList, handleReward }) {
         }
       });
 
-      console.log("GetAllReponseForm data", data);
+      //console.log("GetAllReponseForm data", data);
     });
     return (
       <>
         {data.map((item, index) => (
           <Box>
+            {
+            index==0?
+            <FullScreenComponent sx={{my:3}}>
+              {({ ref, onToggle }) => (
+                <Box ref={ref} height={isFullScreen?"100vh":""} sx={{backgroundColor: 'white'}} >
+      <Fab  sx={{
+        position: "fixed",
+        bottom: (theme) => theme.spacing(2),
+        right: (theme) => theme.spacing(2)
+      }}  aria-label="edit"  onClick={() =>{ onToggle()}}>
+        
+      <FullscreenIcon  />
+      </Fab>
             <GetReponseForm
               handleReward={handleReward}
               index={index}
               item={item}
+            /></Box>)}
+</FullScreenComponent>:<GetReponseForm
+              handleReward={handleReward}
+              index={index}
+              item={item}
             />
+            }
           </Box>
         ))}
       </>
@@ -412,12 +437,13 @@ export default function Live({ module, token }) {
   const [inLive, setInLive] = React.useState(false);
   const [reponsesList, setReponsesList] = React.useState([]);
   const [rewardList, setRewardList] = React.useState([]);
+  const [isFullScreen,setFullScreen]= React.useState(false);
 
   const handleCloseQr = () => {
     setModalQrCode(false);
   };
   const handleReward = (param, label) => {
-    console.log("handleReward", param, label);
+    //console.log("handleReward", param, label);
     const newIds = reponsesList;
 
     newIds.forEach((element, i) => {
@@ -431,17 +457,17 @@ export default function Live({ module, token }) {
     socket.emit("reward", { reponsesList: reponsesList, room: streamID });
     setReponsesList(newIds);
 
-    console.log("handleReward list", reponsesList);
+    //console.log("handleReward list", reponsesList);
     setRefreshKey((oldKey) => oldKey + 1);
   };
 
   const handleChange = (event) => {
-    console.log("handleChange");
+    //console.log("handleChange");
     setChecked(event.target.checked);
   };
 
   const handleChangeQCM = (event) => {
-    console.log("handleChangeQCM");
+    //console.log("handleChangeQCM");
     setValue2(event.target.value);
   };
 
@@ -453,7 +479,7 @@ export default function Live({ module, token }) {
   useEffect(() => {
     return () => {
       if (inLive) {
-        console.log("leaving room");
+        //console.log("leaving room");
       }
     };
   }, [inLive]);
@@ -465,10 +491,10 @@ export default function Live({ module, token }) {
     socket.on("addClient", addClient);
     socket.on("removeClient", removeClient);
     socket.on("disconnect", () => {
-      console.log(socket.connected); // undefined
+      //console.log(socket.connected); // undefined
     });
     socket.on("connect", () => {
-      console.log(socket.connected); // true
+      //console.log(socket.connected); // true
     });
     //The socket is a module that exports the actual socket.io socket
     const addMessage = (msg) => {
@@ -482,11 +508,11 @@ export default function Live({ module, token }) {
   };
 
   const removeClient = (e) => {
-    console.log("removeClient", e);
+    //console.log("removeClient", e);
   };
 
   const handleSend = () => {
-    console.log(
+    //console.log(
       "click ",
       reponsesList,
       clearQL,
@@ -525,12 +551,12 @@ export default function Live({ module, token }) {
     });
   };
   const handleErase = () => {
-    console.log("handleErase", clearQL, questionList);
+    //console.log("handleErase", clearQL, questionList);
     setQuestionList([questionList[0]]);
   };
 
   const handleCloseLiveModal = async () => {
-    console.log("handleCloseLiveModal");
+    //console.log("handleCloseLiveModal");
     setOpenLiveModal(false);
     setPublic(false);
     setQuestionList([]);
@@ -544,7 +570,7 @@ export default function Live({ module, token }) {
   };
 
   const handleStart = () => {
-    console.log("live", module);
+    //console.log("live", module);
     setClearQL("live");
     setInLive(true);
 
@@ -557,7 +583,7 @@ export default function Live({ module, token }) {
     });
   };
   const handlLive = (e) => {
-    console.log("handlLive");
+    //console.log("handlLive");
     setStreamID(module.id_module + "-" + makeid(5));
     setOpenLiveModal(true);
   };
@@ -690,7 +716,7 @@ export default function Live({ module, token }) {
                       placeholder="Question"
                       style={{ width: "100%" }}
                       onChange={(event) => {
-                        console.log("onChange question");
+                        //console.log("onChange question");
                         setQuestion(event.target.value);
                       }}
                       aria-label="minimum height"
@@ -748,7 +774,7 @@ export default function Live({ module, token }) {
                     fullWidth
                     value={option}
                     onChange={(event) => {
-                      console.log("onChange option");
+                      //console.log("onChange option");
                       setOption(event.target.value);
                     }}
                   />
@@ -762,7 +788,7 @@ export default function Live({ module, token }) {
                         label="Minutes and seconds"
                         value={timer}
                         onChange={(newValue) => {
-                          console.log("onChange timer");
+                          //console.log("onChange timer");
                           setTimer(newValue);
                         }}
                         renderInput={(params) => (
@@ -828,6 +854,8 @@ export default function Live({ module, token }) {
                     reponsesList={reponsesList}
                     questionList={questionList}
                     handleReward={handleReward}
+                    isFullScreen={isFullScreen}
+                    setFullScreen={setFullScreen}
                   />
                 </Stack>
               </Item>

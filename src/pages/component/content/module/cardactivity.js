@@ -54,7 +54,7 @@ function getDate(d) {
 }
 
 function GetDivider({ index, size }) {
-  console.log("Div", index, size);
+  //console.log("Div", index, size);
   if (index == size) return <></>;
   return <Divider />;
 }
@@ -76,14 +76,14 @@ async function getActivity(data, token, limit) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
     window.location.reload(false);
   }
   const result = await response.json();
-  console.log("getActivity", result);
+  //console.log("getActivity", result);
   if (limit != undefined) return result.slice(0, limit);
   return result;
 }
@@ -94,7 +94,7 @@ export default function CardActivity({ data, token, limit }) {
   useEffect(() => {
     const fetchData = async () => {
       if (data != undefined) {
-        console.log("data", data);
+        //console.log("data", data);
         var rep = await getActivity(data, token, limit);
         setList(rep);
       }
@@ -116,7 +116,7 @@ export default function CardActivity({ data, token, limit }) {
         >
           {listActivity.map((item, index) => (
             <Box>
-              {console.log(
+              {//console.log(
                 "item",
                 item.eval == undefined ? "" : item.eval.note
               )}

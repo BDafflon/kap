@@ -30,7 +30,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 
 function GetReward(props) {
   var index = props.index + 1;
-  console.log("GetReward", index);
+  //console.log("GetReward", index);
   if (index > 3) return <Avatar>{index}</Avatar>;
 
   var colorReward = grey[900];
@@ -44,7 +44,7 @@ function GetReward(props) {
 
 async function getRank(module, token, limit) {
   if (limit == undefined) limit = 5;
-  console.log("getRank", module, limit);
+  //console.log("getRank", module, limit);
   const requestOptions = {
     method: "GET",
     mode: "cors",
@@ -61,7 +61,7 @@ async function getRank(module, token, limit) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -70,7 +70,7 @@ async function getRank(module, token, limit) {
 
   const result = await response.json();
   var data = [];
-  console.log("getRank res", result);
+  //console.log("getRank res", result);
   if (result.index < limit) {
     data = result.data.slice(0, limit);
   } else {
@@ -88,7 +88,7 @@ async function getRank(module, token, limit) {
 }
 
 function GetDivider({ index, size }) {
-  console.log("Div", index, size);
+  //console.log("Div", index, size);
   if (index == size) return <></>;
   return <Divider />;
 }
@@ -100,7 +100,7 @@ export default function Ranking({ data, token, limit, handleUpdater }) {
   useEffect(() => {
     const fetchData = async () => {
       if (data != undefined) {
-        console.log("data", data);
+        //console.log("data", data);
         var rep = await getRank(data, token, limit);
         setRank(rep);
       }

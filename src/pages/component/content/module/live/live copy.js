@@ -74,7 +74,7 @@ function LinearProgressWithLabel(props) {
       colorReward = grey[200]
       if(props.rewardvalue>=3)
       colorReward = yellow[400]
-      console.log("LinearProgressWithLabel",props.reward)
+      //console.log("LinearProgressWithLabel",props.reward)
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -125,10 +125,10 @@ function  map(value, istart, istop, ostart, ostop){
 
 function GetReponseForm({handleReward,index,item}){
   if(item == undefined){
-    console.log("GetReponseForm undef")
+    //console.log("GetReponseForm undef")
     return <></>
   }
-  console.log("GetReponseForm",item)
+  //console.log("GetReponseForm",item)
   let renderLabel = function(entry) {
     return entry.name;
 }
@@ -154,7 +154,7 @@ function GetReponseForm({handleReward,index,item}){
   if(item.type==1){//QCM
     
     
-    console.log("data",data)
+    //console.log("data",data)
     return (
       <>
       <Typography>Question {index}: {item.question}</Typography>
@@ -194,7 +194,7 @@ function GetReponseForm({handleReward,index,item}){
       data[i].normalizeValue2=map(data[i].normalizeValue, 0, data[0].normalizeValue, 0, 100)
 
     }
-    console.log(data)
+    //console.log(data)
     
      
     //x nb
@@ -242,7 +242,7 @@ function GetReponseForm({handleReward,index,item}){
 }
 
 export default function Live({module,token}){
-  console.log("module live",module)
+  //console.log("module live",module)
     const [currentQuestion, setCurrentQuestion] = React.useState({question:"",reponses:[]})
     const [questionList, setQuestionList] = React.useState([])
     const [openLiveModal, setOpenLiveModal] = React.useState(false)
@@ -257,7 +257,7 @@ export default function Live({module,token}){
     const [refreshKey, setRefreshKey] = React.useState(0)
 
     const handleReward = (param,label) =>{
-      console.log("handleReward")
+      //console.log("handleReward")
       const newIds = questionList
 
       newIds.forEach((element,i) => {
@@ -275,31 +275,31 @@ export default function Live({module,token}){
 
      setQuestionList(newIds)
 
-     console.log("handleReward list" , questionList)
+     //console.log("handleReward list" , questionList)
      setRefreshKey(oldKey => oldKey + 1)
 
       
     }
 
     const handleChange = (event) => {
-      console.log("handleChange")
+      //console.log("handleChange")
       setChecked(event.target.checked);
     };
 
     const handleChangeQCM = (event) => {
-      console.log("handleChangeQCM")
+      //console.log("handleChangeQCM")
       setValue2(event.target.value);
     };
 
     useEffect(() => {
-      console.log("useE")
+      //console.log("useE")
       if(socket==undefined){        
         if(titre!=""){
         const sock =  io(ConfigData.SERVER_URL)
         sock.emit('join', {"name":"Prof", "room":streamID,"titre":titre,"token":token,"module":module})
         sock.on('addReponse', addReponse2); 
         setSocket(sock)
-        console.log("start sock")
+        //console.log("start sock")
         }
       }
 
@@ -318,8 +318,8 @@ export default function Live({module,token}){
     const addReponse2=(e)=>{
        
 
-        console.log("addReponse",e)
-        console.log("addReponse list" ,currentQuestion, questionList)
+        //console.log("addReponse",e)
+        //console.log("addReponse list" ,currentQuestion, questionList)
 
         const newIds = questionList
         newIds[0].reponses.unshift({reponse:e.content,user:e.user})
@@ -330,16 +330,16 @@ export default function Live({module,token}){
 
        setQuestionList(newIds)
 
-       console.log("addReponse list" , questionList)
+       //console.log("addReponse list" , questionList)
        setRefreshKey(oldKey => oldKey + 1)
 
     }
     const addReponse=(sta)=>(e)=>{
-      console.log("addReponse list" ,currentQuestion, questionList,sta)
+      //console.log("addReponse list" ,currentQuestion, questionList,sta)
     }
 
     const handleSend =()=>{
-        console.log("click ",timer,option,question)
+        //console.log("click ",timer,option,question)
         var datum = new Date;
         datum.setTime(timer);
         var seconds = datum.getSeconds();
@@ -348,7 +348,7 @@ export default function Live({module,token}){
         var t = seconds+minutes*60+hour*3600
         
        
-        console.log("click",questionList)
+        //console.log("click",questionList)
         var qc = {}
         
 
@@ -365,20 +365,20 @@ export default function Live({module,token}){
         setQuestionList(data);
 
        
-        console.log("click2",questionList)
+        //console.log("click2",questionList)
         socket.emit('liveQuestion',{"timer":t,"reponseunique":checked?1:0,"type":value2,"option":option,"question":question,"token":token,"module":module,"room":streamID})
-        console.log("click3",questionList)
+        //console.log("click3",questionList)
         setCurrentQuestion({...qc})
         //setRefreshKey(oldKey => oldKey + 1)
         addReponse(questionList)
 
       }
     const handleErase = () =>{
-      console.log("handleErase")
+      //console.log("handleErase")
       setQuestionList([questionList[0]])
     }
     const handleCloseLiveModal =async ()=>{
-      console.log("handleCloseLiveModal")
+      //console.log("handleCloseLiveModal")
       setOpenLiveModal(false)
       setQuestionList([])
       setTitre("")
@@ -391,7 +391,7 @@ export default function Live({module,token}){
     }
   
    const handleStart =()=>{
-    console.log("live",module)
+    //console.log("live",module)
     setQuestionList([])
     setRefreshKey(oldKey => oldKey + 1)
 
@@ -399,7 +399,7 @@ export default function Live({module,token}){
     
    }
       const handlLive = e => {
-        console.log('handlLive')
+        //console.log('handlLive')
         setStreamID(module.id_module+"-"+makeid(5))
           setOpenLiveModal(true)
 
@@ -455,7 +455,7 @@ export default function Live({module,token}){
             placeholder="Question"
             style={{ width: "100%" }}
             onChange={(event) => {
-              console.log("onChange question")
+              //console.log("onChange question")
                 setQuestion(event.target.value);
               }}
           />
@@ -484,7 +484,7 @@ export default function Live({module,token}){
         <TextField id="standard-basic" label="Option" variant="standard" fullWidth 
           value={option}
           onChange={(event) => {
-            console.log("onChange option")
+            //console.log("onChange option")
             setOption(event.target.value);
           }}
            />
@@ -499,7 +499,7 @@ export default function Live({module,token}){
           label="Minutes and seconds"
           value={timer}
           onChange={(newValue) => {
-            console.log("onChange timer")
+            //console.log("onChange timer")
             setTimer(newValue);
           }}
           renderInput={(params) => <TextField {...params} variant="standard" />}

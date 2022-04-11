@@ -32,7 +32,7 @@ const commonStyles = {
 const applyDrag = (arr, dragResult,handleChild, index,data,correction) => {
   if(correction)
     return arr
-  console.log('drag', arr)
+  //console.log('drag', arr)
   const { removedIndex, addedIndex, payload } = dragResult
   if (removedIndex === null && addedIndex === null) return arr
 
@@ -46,7 +46,7 @@ const applyDrag = (arr, dragResult,handleChild, index,data,correction) => {
   if (addedIndex !== null) {
     result.splice(addedIndex, 0, itemToAdd)
   }
-  console.log('resDrag', result)
+  //console.log('resDrag', result)
   handleChild(data,index,"LIST",result)(null)
   return result
 }
@@ -54,7 +54,7 @@ const applyDrag = (arr, dragResult,handleChild, index,data,correction) => {
 
 
 function GetAlert({data,essais,handleEssai,erreur}){
-  console.log("getalert",data,data.essais,erreur)
+  //console.log("getalert",data,data.essais,erreur)
   if(data.essais==undefined) return <></>
 
   if(!erreur){
@@ -66,7 +66,7 @@ function GetAlert({data,essais,handleEssai,erreur}){
     rep.forEach(element => {
       repS+=' ['+element+"] "
     });
-    console.log("---",rep,repS)
+    //console.log("---",rep,repS)
     return <Alert severity="error">Erreur. La réponse est :{repS}</Alert>
   }else{
     
@@ -171,7 +171,7 @@ export default function QuestionListForm ({data,handleChild, index,type, correct
     }
     var ok=true
     var rep = data.reponse.split('§')
-    console.log('-----',rep,data.tabRep)
+    //console.log('-----',rep,data.tabRep)
     if(rep.lenght == data.tabRep.lenght){
       rep.forEach((element,i) => {
         if(element != data.tabRep[i].data)
@@ -216,14 +216,14 @@ export default function QuestionListForm ({data,handleChild, index,type, correct
   };
 
   const handleChange = param =>event=>{
-    console.log(param,reponsesUser,event)
+    //console.log(param,reponsesUser,event)
      
   }
 
-    console.log("QuestionListForm",data)
+    //console.log("QuestionListForm",data)
     return(
         <>
-        {console.log("QuestionListForm",data)}
+        {//console.log("QuestionListForm",data)}
         <Box sx={{  p: 2.25, boxShadow: 1 }}>
          
                   <Typography >{"Question N°:"+data.order} (Barem :{data.barem} / difficulté:{data.difficulte}) </Typography> 

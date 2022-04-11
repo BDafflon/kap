@@ -64,7 +64,7 @@ async function getModules(token) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -73,7 +73,7 @@ async function getModules(token) {
   const result = await response.json();
   var data = [];
   result.modules.forEach((element) => {
-    console.log("element", element);
+    //console.log("element", element);
     if (element.id_owner == token.id) {
       var item = {
         label: element.name,
@@ -112,20 +112,20 @@ async function getDevoir(token) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
     window.location.reload(false);
   }
   const result = await response.json();
-  console.log("getDevoir", result);
+  //console.log("getDevoir", result);
   return result;
 }
 
 function getOpen(ressource) {
   var today = Math.round(new Date().getTime() / 1000);
-  console.log(
+  //console.log(
     "getOpen",
     ressource,
     today,
@@ -156,14 +156,14 @@ async function getExam(token) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
     window.location.reload(false);
   }
   const result = await response.json();
-  console.log("getExam", result);
+  //console.log("getExam", result);
   return result;
 }
 
@@ -176,7 +176,7 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 function GetDivider({ index, size }) {
-  console.log("Div", index, size);
+  //console.log("Div", index, size);
   if (index == size) return <></>;
   return <Divider />;
 }
@@ -199,16 +199,16 @@ export default function DashboardUser({ token }) {
   }, [updater]);
 
   const handleUpdater = () => {
-    console.log("update dash");
+    //console.log("update dash");
     setUpdater((oldKey) => oldKey + 1);
   };
 
   const closeModal = () => {
-    console.log("close dash");
+    //console.log("close dash");
   };
 
   const handleRessource = (p) => (e) => {
-    console.log("update dash", p);
+    //console.log("update dash", p);
 
     setRessource(p);
     setOpenModal(true);

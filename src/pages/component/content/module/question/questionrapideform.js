@@ -18,7 +18,7 @@ import Alert from '@mui/material/Alert';
  
 
 function GetAlert({data,essais,handleEssai,erreur}){
-  console.log("getalert",data,data.essais,erreur)
+  //console.log("getalert",data,data.essais,erreur)
   if(data.essais==undefined) return <></>
 
   if(!erreur){
@@ -172,7 +172,7 @@ export default function QuestionRapideForm ({data,handleChild, index, type, corr
 
     return(
         <>
-        {console.log("QuestionRapideForm",data)}
+        {//console.log("QuestionRapideForm",data)}
         <Box sx={{  p: 2.25, boxShadow: 1 }}>
          
                   <Typography >{"Question N°:"+data.order} (Barem :{data.barem} / difficulté:{data.difficulte}) </Typography> 

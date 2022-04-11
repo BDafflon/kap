@@ -41,7 +41,7 @@ const Alert = React.forwardRef(function Alert(props, ref) {
 });
 
 function getTimer(timeStart, timer) {
-  console.log("getTimer", timeStart, timer);
+  //console.log("getTimer", timeStart, timer);
 
   if (timer == "") return " --:--:--";
   var sec = timeStart + timer * 60 - Math.round(new Date() / 1000);
@@ -81,9 +81,9 @@ async function uploadFile(name, file, token) {
     ConfigData.SERVER_URL + "/uploader",
     requestOptions
   );
-  console.log(response);
+  //console.log(response);
   if (!response.ok) {
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -114,7 +114,7 @@ async function sendQuestionsList(data, questionsListe, token, timeLeft) {
       d.push(question);
     });
   });
-  console.log("sendQuestionsList", d);
+  //console.log("sendQuestionsList", d);
 
   const requestOptions = {
     method: "POST",
@@ -127,7 +127,7 @@ async function sendQuestionsList(data, questionsListe, token, timeLeft) {
     body: JSON.stringify({ questionList: d, ressource: data, timer: timeLeft }),
   };
 
-  console.log(
+  //console.log(
     "sendQuestionsList stringify",
     JSON.stringify({ questionList: d, ressource: data })
   );
@@ -136,9 +136,9 @@ async function sendQuestionsList(data, questionsListe, token, timeLeft) {
     ConfigData.SERVER_URL + "/evaluation/participation",
     requestOptions
   );
-  console.log(response);
+  //console.log(response);
   if (!response.ok) {
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -155,7 +155,7 @@ function GetForm({
   correction,
   autoCorrection,
 }) {
-  console.log("GetForm", data);
+  //console.log("GetForm", data);
   if (data.type == "0") {
     return (
       <QuestionRapideForm
@@ -261,7 +261,7 @@ export default function FormContent({ data, handleClose, token }) {
 
   const handleNext = async () => {
     if (activeStep === questionsListe.length - 1) {
-      console.log("handleNext", questionsListe);
+      //console.log("handleNext", questionsListe);
 
       await sendQuestionsList(data, questionsListe, token, timeLeft);
       setQuestion([]);
@@ -279,7 +279,7 @@ export default function FormContent({ data, handleClose, token }) {
   useEffect(() => {
     let interval = null;
 
-    console.log("FormContent", data);
+    //console.log("FormContent", data);
     if (data.timer != undefined) {
       setTimeLeft(Math.round(+new Date() / 1000) + data.timer * 60);
       setTimeLeft(getTimer(timeStart, data.timer));
@@ -355,7 +355,7 @@ export default function FormContent({ data, handleClose, token }) {
     pages.push({ name: "Fin", questions: [] });
 
     setQuestion([...pages]);
-    console.log("FormContent questionsListe", questionsListe);
+    //console.log("FormContent questionsListe", questionsListe);
 
     return () => {
       clearInterval(interval);
@@ -367,19 +367,19 @@ export default function FormContent({ data, handleClose, token }) {
     setActiveStep(0);
   };
   const handleChild = (data, index, type, field) => (e) => {
-    console.log("handleChildForm", data, index, type, field, e);
+    //console.log("handleChildForm", data, index, type, field, e);
 
     if (type == "QCM") {
-      console.log("handleChildFormQCM", data, index, type, field, e);
+      //console.log("handleChildFormQCM", data, index, type, field, e);
       questionsListe[activeStep].questions[index].tabRep[field] =
         e.target.checked;
     } else {
       if (type == "LIST") {
-        console.log("handleChildFormLIST", data, index, type, field, e);
+        //console.log("handleChildFormLIST", data, index, type, field, e);
         questionsListe[activeStep].questions[index].tabRep = field;
       } else {
         if (type == "FILE") {
-          console.log("handleChildFormLIST", data, index, type, field, e);
+          //console.log("handleChildFormLIST", data, index, type, field, e);
           questionsListe[activeStep].questions[index].media = field;
         } else {
           var {
@@ -391,7 +391,7 @@ export default function FormContent({ data, handleClose, token }) {
       }
     }
 
-    console.log("handleChild - questionsListe", questionsListe);
+    //console.log("handleChild - questionsListe", questionsListe);
   };
 
   if (questionsListe.length == 0) return <></>;
@@ -407,7 +407,7 @@ export default function FormContent({ data, handleClose, token }) {
                 if (label.questions[0].essais != undefined) {
                   if (label.questions[0].essais <= 0) {
                     labelProps.error = true;
-                    console.log("-----------", label);
+                    //console.log("-----------", label);
                   }
                 }
               }
@@ -486,7 +486,7 @@ export default function FormContent({ data, handleClose, token }) {
         open={openTimer}
       >
         <Alert severity={getSeverity(data, timeLeft)} sx={{ width: "100%" }}>
-          {console.log("timeLeft", timeLeft)}
+          {//console.log("timeLeft", timeLeft)}
           {"Timer :" + timeLeft}
         </Alert>
       </Snackbar>

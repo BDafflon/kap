@@ -67,7 +67,7 @@ function getType(type){
 }
 
 function GetDivider({index, size}){
-    console.log("Div",index, size)
+    //console.log("Div",index, size)
     if(index == size) return <></>
     return <Divider/>
 }
@@ -87,19 +87,19 @@ export default function CardCorrection({data,token,handleUpdate}){
         var d = []
         var c=[]
         Object.keys(data).forEach(e =>{
-          console.log("Object",e,data[e]);
+          //console.log("Object",e,data[e]);
           d.push(data[e])
           c.push(false)
           
       })
-      console.log("CardC",d)
+      //console.log("CardC",d)
       setList(d)
       setOpenColaps(c)
     }
       }, [data,updater]);
 
     const handleCorrection = (param,ressource,index) => e => {
-        console.log("handleRessource", param,ressource)
+        //console.log("handleRessource", param,ressource)
         setRessource(ressource)
         setReponses(param)
         setIntexCorrection(index)
@@ -116,7 +116,7 @@ export default function CardCorrection({data,token,handleUpdate}){
     
       const handleNextCorrection=()=>{
          
-        console.log("handleNextCorrection",indexCorrection,listRessource[indexCorrection])
+        //console.log("handleNextCorrection",indexCorrection,listRessource[indexCorrection])
         var find=false
         var dossier=undefined
         for(var i=0;i<listRessource[indexCorrection].data.length && !find;i++){
@@ -128,7 +128,7 @@ export default function CardCorrection({data,token,handleUpdate}){
         }
 
         
-          console.log("handleNextCorrection",dossier)
+          //console.log("handleNextCorrection",dossier)
           if(dossier==undefined)
             setOpen(false);
           else{
@@ -147,7 +147,7 @@ export default function CardCorrection({data,token,handleUpdate}){
       };
 
       const handleDL =  (item) =>async(e)=> {
-        console.log("DL",item)
+        //console.log("DL",item)
         var csv="data:text/csv;charset=utf-8,Ressource;\n"
         csv+="Nom;"+item.ressource.titre+";\n"
         csv+="Type;"+item.ressource.type+";\n"
@@ -160,13 +160,13 @@ export default function CardCorrection({data,token,handleUpdate}){
         });
         csv+="\n"
 
-        console.log("idQ",idQuestion)
+        //console.log("idQ",idQuestion)
         item.data.forEach(element => {
           csv+=element.id_user+";"+element.user.firstname+";"+element.user.lastname+";"+element.user.mail+";"
           for(var i=0; i<idQuestion.length;i++){
             var r=""
             for(var j=0; j<element.reponse.length;j++){
-              console.log("forEach",idQuestion[i].id,element.reponse[j].id_question)
+              //console.log("forEach",idQuestion[i].id,element.reponse[j].id_question)
               if(idQuestion[i].id===parseInt(element.reponse[j].id_question)){
                 if(idQuestion[i].type==2){
                     var rep = element.reponse[j].reponse.split("§")
@@ -178,7 +178,7 @@ export default function CardCorrection({data,token,handleUpdate}){
                 }else{
                   r=element.reponse[j].reponse.replace("\n"," ")
                 }
-                console.log("r",r)
+                //console.log("r",r)
               }
             }
             csv+=r+";"
@@ -198,10 +198,10 @@ export default function CardCorrection({data,token,handleUpdate}){
       }
 
       const handleClose=  (event, reason) => {
-        console.log(reason)
+        //console.log(reason)
         if (reason && reason == "backdropClick" || reason == "escapeKeyDown") 
         return;
-        console.log("data",ressource)
+        //console.log("data",ressource)
          
         setOpen(false);
         setUpdate(oldKey => oldKey + 1)

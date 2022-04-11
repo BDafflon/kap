@@ -6,6 +6,7 @@ import Login from './pages/login';
 import Preferences from './pages/Preferences';
 import useToken from './utils/useToken';
 import Registration from './pages/registration';
+import LiveUser from './pages/component/content/module/live/liveuser';
  
 
 function App() {
@@ -13,12 +14,13 @@ function App() {
   
 
   if(!token){
+    //console.log('?')
     return (<div className='wrapper'>
     
     <BrowserRouter>
      <Routes>
+        <Route path='/live/:publickey' element={<LiveUser />} />
        <Route path='/login' element={<Login setToken={setToken}/>} />
-
        <Route path='/registration' element={<Registration/>} />
        <Route path="*" element={<Login setToken={setToken}/>} />
      </Routes>

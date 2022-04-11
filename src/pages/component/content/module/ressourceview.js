@@ -57,9 +57,9 @@ async function recodeActivity(data, startTime, endTime, token) {
     ConfigData.SERVER_URL + "/ressources/stat",
     requestOptions
   );
-  console.log(response);
+  //console.log(response);
   if (!response.ok) {
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -89,7 +89,7 @@ export default function RessourceView({ data, token, handleClose }) {
   const [updater, setUpdater] = React.useState(0);
 
   const IsAct = () => {
-    console.log("hisActive", mousePos);
+    //console.log("hisActive", mousePos);
   };
 
   const updateMousePosition = (ev) => {
@@ -98,19 +98,19 @@ export default function RessourceView({ data, token, handleClose }) {
 
   useEffect(() => {
     setRessource(data);
-    console.log("RessourceView", startTime, data);
+    //console.log("RessourceView", startTime, data);
 
     return () => {
       async function saveStat() {
         window.removeEventListener("mousemove", updateMousePosition);
-        console.log("QUIT", data, startTime, Math.round(+new Date() / 1000));
+        //console.log("QUIT", data, startTime, Math.round(+new Date() / 1000));
         if (data.type > 3) {
           data.content.forEach((element) => {
             delete element.reponseuser;
             delete element.essais;
           });
         }
-        console.log("QUIT", data, startTime, Math.round(+new Date() / 1000));
+        //console.log("QUIT", data, startTime, Math.round(+new Date() / 1000));
 
         await recodeActivity(
           data,

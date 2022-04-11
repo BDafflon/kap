@@ -19,6 +19,8 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PropType from "prop-types";
 import ConfigData from "../../../../utils/configuration.json";
+import * as ModuleUtile from "../../../../utils/moduleutile";
+import getDate from "../../../../utils/timestamptodate";
 import CardWrapper from "./cardwrapper";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import { styled } from "@mui/material/styles";
@@ -42,11 +44,16 @@ import {
   ReferenceLine,
 } from "recharts";
 import CardActivity from "./cardactivity";
+import Stack from "@mui/material/Stack";
+import ListSubheader from "@mui/material/ListSubheader";
+import ListItemButton from "@mui/material/ListItemButton";
+import HomeWorkIcon from "@mui/icons-material/HomeWork";
+import ListItemIcon from "@mui/material/ListItemIcon";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
   ...theme.typography.body2,
-  padding: theme.spacing(1),
+  padding: theme.spacing(3),
   textAlign: "center",
   color: theme.palette.text.secondary,
 }));
@@ -68,14 +75,14 @@ async function getActivity(data, token) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
     window.location.reload(false);
   }
   const result = await response.json();
-  console.log("getActivity", result);
+  //console.log("getActivity", result);
   return result;
 }
 
@@ -96,19 +103,19 @@ async function getNotes(data, token) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
     window.location.reload(false);
   }
   const result = await response.json();
-  console.log("getNotes", result);
+  //console.log("getNotes", result);
   return result;
 }
 
 async function getRessources(token, module) {
-  console.log("getRessources", module);
+  //console.log("getRessources", module);
   const requestOptions = {
     method: "GET",
     mode: "cors",
@@ -125,7 +132,7 @@ async function getRessources(token, module) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -134,106 +141,19 @@ async function getRessources(token, module) {
   const result = await response.json();
   var data = [];
   result.forEach((element) => {
-    console.log("element", element);
+    //console.log("element", element);
     data.push(element);
   });
   return data;
 }
 
-const obj = ""; //Une entreprise conçoit et fabrique des systèmes de transmission de puissance. Elle envisage de faire évoluer son offre de motoréducteurs. Pour planifier cette évolution, elle souhaite avoir une vision objective de la performance de ses 2 lignes actuelles d’assemblage sur les 12 derniers mois."
-
-const metrics = [
-  undefined,
-  {
-    type: "graph",
-    size: "m",
-    label: "Temps passé",
-    ref: <></>,
-    data: [
-      { name: "", data: 10 },
-      { name: "", data: 8 },
-      { name: "", data: 9 },
-      { name: "", data: 10 },
-      { name: "", data: 8 },
-      { name: "", data: 9 },
-    ],
-    icon: (
-      <ArrowUpwardIcon
-        fontSize="inherit"
-        sx={{ transform: "rotate3d(0, 0, 1, 45deg)" }}
-      />
-    ),
-  },
-  {
-    type: "graph",
-    size: "m",
-    label: "Moyenne",
-    ref: <ReferenceLine y={10} label="10/20" stroke="red" />,
-    data: [
-      { name: "10/01", data: 10 },
-      { name: "17/01", data: 8 },
-      { name: "24/01", data: 9 },
-    ],
-    icon: (
-      <ArrowUpwardIcon
-        fontSize="inherit"
-        sx={{ transform: "rotate3d(0, 0, 1, 45deg)" }}
-      />
-    ),
-  },
-  {
-    type: "rappel",
-    label: "Prochain DM",
-    data: "10/03/2022",
-    icon: (
-      <ArrowUpwardIcon
-        fontSize="inherit"
-        sx={{ transform: "rotate3d(0, 0, 1, 45deg)" }}
-      />
-    ),
-  },
-  {
-    type: "rappel",
-    label: "Prochain Exam",
-    data: "10/03/2022",
-    icon: (
-      <ArrowUpwardIcon
-        fontSize="inherit"
-        sx={{ transform: "rotate3d(0, 0, 1, 45deg)" }}
-      />
-    ),
-  },
-  {
-    type: "graph",
-    size: "l",
-    label: "Evolution",
-    data: "10/03/2022",
-    icon: (
-      <ArrowUpwardIcon
-        fontSize="inherit"
-        sx={{ transform: "rotate3d(0, 0, 1, 45deg)" }}
-      />
-    ),
-  },
-  {
-    type: "text",
-    size: "l",
-    label: obj,
-    titre: " ",
-    data: "10/03/2022",
-    icon: (
-      <ArrowUpwardIcon
-        fontSize="inherit"
-        sx={{ transform: "rotate3d(0, 0, 1, 45deg)" }}
-      />
-    ),
-  },
-];
-
 export default function Module({ module, token }) {
+  //console.log("Module", module);
   const [ressource, setRessource] = React.useState([]);
   const [prochainDevoir, setDevoir] = React.useState([]);
-  const [prochainExam, setExam] = React.useState([]);
+  const [exam, setExam] = React.useState([]);
+  const [devoirs, setDevoirs] = React.useState();
+
   const [intro, setIntro] = React.useState({
     type: "text",
     size: "l",
@@ -249,7 +169,7 @@ export default function Module({ module, token }) {
   });
   useEffect(() => {
     async function load() {
-      console.log("Module", module);
+      //console.log("Module", module);
       setIntro({
         type: "text",
         size: "l",
@@ -288,73 +208,129 @@ export default function Module({ module, token }) {
           }
         }
       });
-      setDevoir({
-        type: "rappel",
-        label: "Prochain DM",
-        data: pDevoir.dateO,
-        icon: (
-          <ArrowUpwardIcon
-            fontSize="inherit"
-            sx={{ transform: "rotate3d(0, 0, 1, 45deg)" }}
-          />
-        ),
-      });
-      setExam({
-        type: "rappel",
-        label: "Prochain Exam",
-        data: pExam.dateO,
-        icon: (
-          <ArrowUpwardIcon
-            fontSize="inherit"
-            sx={{ transform: "rotate3d(0, 0, 1, 45deg)" }}
-          />
-        ),
-      });
+      setDevoirs(await ModuleUtile.getDevoir(token));
+      setExam(await ModuleUtile.getExam(token));
 
       var act = await getActivity(module, token);
-      console.log("act", act);
+      //console.log("act", act);
       var notes = await getNotes(module, token);
     }
     load();
   }, []);
   return (
     <Box>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Grid container spacing={3}>
-            <Grid item lg={8} md={12} sm={12} xs={12}>
-              <CardWrapper data={intro} />
-            </Grid>
-            <Grid item lg={4} md={12} sm={12} xs={12}>
-              <Grid container spacing={3}>
-                <Grid item sm={6} xs={12} md={6} lg={12}>
-                  <CardWrapper data={prochainDevoir} />
-                </Grid>
-                <Grid item sm={6} xs={12} md={6} lg={12}>
-                  <CardWrapper data={prochainExam} />
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={12} md={8}>
+          <CardWrapper data={intro} />
         </Grid>
-      </Grid>
-      <Grid sx={{ my: 2 }} container spacing={3}>
-        <Grid item xs={12}>
-          <Grid container spacing={3}>
-            <Grid item lg={8} md={12} sm={12} xs={12}>
-              <CardWrapper data={metrics[0]} />
-            </Grid>
-            <Grid item lg={4} md={12} sm={12} xs={12}>
-              <Grid container spacing={3}>
-                <Grid item sm={6} xs={12} md={6} lg={12}>
-                  <CardRessource data={module} token={token} />
-                </Grid>
-                <Grid item sm={6} xs={12} md={6} lg={12}>
-                  <CardActivity data={module} token={token} />
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
+        <Grid item xs={4}>
+          <Stack spacing={3}>
+            <List
+              sx={{ width: "100%", bgcolor: "background.paper", boxShadow: 1 }}
+              subheader={
+                <ListSubheader component="div" id="nested-list-subheader">
+                  Devoirs
+                </ListSubheader>
+              }
+            >
+              {devoirs == undefined ? (
+                <></>
+              ) : (
+                devoirs[module.id_module].slice(0, 1).map((devoir, i) => (
+                  <Box>
+                    <ListItemButton
+                      disabled={
+                        !(
+                          (devoir.dateO < new Date().getTime() / 1000 &&
+                            devoir.dateF > new Date().getTime() / 1000) ||
+                          devoir.dateO == 0
+                        )
+                      }
+                      alignItems="flex-start"
+                    >
+                      <ListItemIcon>
+                        <HomeWorkIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={devoir.titre}
+                        secondary={
+                          <React.Fragment>
+                            <Typography
+                              sx={{ display: "inline" }}
+                              component="span"
+                              variant="body2"
+                              color="text.primary"
+                            >
+                              {getDate(devoir.dateF)}
+                            </Typography>{" "}
+                          </React.Fragment>
+                        }
+                      />
+                    </ListItemButton>
+                    <ModuleUtile.GetDivider
+                      index={i + 1}
+                      size={devoirs[module.id_module].slice(0, 5).length}
+                    />
+                  </Box>
+                ))
+              )}
+            </List>
+
+            <List
+              sx={{ width: "100%", bgcolor: "background.paper", boxShadow: 1 }}
+              subheader={
+                <ListSubheader component="div" id="nested-list-subheader">
+                  Exam
+                </ListSubheader>
+              }
+            >
+              {exam == undefined ? (
+                <></>
+              ) : (
+                exam[module.id_module].slice(0, 1).map((devoir, i) => (
+                  <Box>
+                    <ListItemButton
+                      disabled={
+                        !(
+                          (devoir.dateO < new Date().getTime() / 1000 &&
+                            devoir.dateF > new Date().getTime() / 1000) ||
+                          devoir.dateO == 0
+                        )
+                      }
+                      alignItems="flex-start"
+                    >
+                      <ListItemIcon>
+                        <HomeWorkIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={devoir.titre}
+                        secondary={
+                          <React.Fragment>
+                            <Typography
+                              sx={{ display: "inline" }}
+                              component="span"
+                              variant="body2"
+                              color="text.primary"
+                            >
+                              {getDate(devoir.dateF)}
+                            </Typography>{" "}
+                          </React.Fragment>
+                        }
+                      />
+                    </ListItemButton>
+                    <ModuleUtile.GetDivider
+                      index={i + 1}
+                      size={exam[module.id_module].slice(0, 5).length}
+                    />
+                  </Box>
+                ))
+              )}
+            </List>
+
+            <CardRessource data={module} token={token} />
+
+            <CardActivity data={module} token={token} />
+          </Stack>
         </Grid>
       </Grid>
     </Box>

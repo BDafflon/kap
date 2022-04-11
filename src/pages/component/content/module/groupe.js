@@ -50,7 +50,7 @@ async function generateCode(token, groupeSelected) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -77,7 +77,7 @@ async function deleteCodeGroupe(token, groupeSelected) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -86,7 +86,7 @@ async function deleteCodeGroupe(token, groupeSelected) {
 }
 
 function GetDivider({ index, size }) {
-  console.log("Div", index, size);
+  //console.log("Div", index, size);
   if (index == size) return <></>;
   return <Divider />;
 }
@@ -117,7 +117,7 @@ export default function Groupe({ data, token }) {
     if (data != undefined) {
       async function load() {
         var res = await getGroupes(token, data);
-        console.log("Groupe", res);
+        //console.log("Groupe", res);
         setList(res);
       }
 
@@ -126,7 +126,7 @@ export default function Groupe({ data, token }) {
   }, [data]);
 
   const handleAddGroupeCode = (item) => async () => {
-    console.log(item);
+    //console.log(item);
     setDataGroupeSelected(item);
     var code = await generateCode(token, item);
     setCodeGroupe(code);
@@ -134,7 +134,7 @@ export default function Groupe({ data, token }) {
   };
 
   const handleRessource = (param) => (e) => {
-    console.log("handleRessource", param);
+    //console.log("handleRessource", param);
     setRessource(param);
     setOpen(true);
   };
@@ -161,10 +161,10 @@ export default function Groupe({ data, token }) {
   };
 
   const handleClose = (event, reason) => {
-    console.log(reason);
+    //console.log(reason);
     if ((reason && reason == "backdropClick") || reason == "escapeKeyDown")
       return;
-    console.log("data", ressource);
+    //console.log("data", ressource);
     if (ressource.type == 4) setOpenAlert(true);
     else setOpen(false);
   };

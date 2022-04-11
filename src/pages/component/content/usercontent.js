@@ -22,7 +22,7 @@ export default function UserContent({module,token, dashboardType}){
     useEffect(() => {
       if(module!=undefined){
         setModule(module)
-        console.log("UserContent",token,module)
+        //console.log("UserContent",token,module)
       }
       }, [module]);
 

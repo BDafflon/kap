@@ -52,9 +52,9 @@ async function uploadFile(name, file, token) {
     ConfigData.SERVER_URL + "/uploader",
     requestOptions
   );
-  console.log(response);
+  //console.log(response);
   if (!response.ok) {
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -72,7 +72,7 @@ async function sendReponseList(
   token
 ) {
   var d = [];
-  console.log("sendReponseList dataReponse", data, dataReponse);
+  //console.log("sendReponseList dataReponse", data, dataReponse);
   questionsListe.forEach((element, i) => {
     element.questions.forEach(async (question, i) => {
       if (question.reponseuser == undefined) {
@@ -91,7 +91,7 @@ async function sendReponseList(
       d.push(question);
     });
   });
-  console.log("sendQuestionsList", d);
+  //console.log("sendQuestionsList", d);
 
   const requestOptions = {
     method: "POST",
@@ -109,7 +109,7 @@ async function sendReponseList(
     }),
   };
 
-  console.log(
+  //console.log(
     "sendQuestionsList stringify",
     JSON.stringify({ questionList: d, ressource: data })
   );
@@ -118,9 +118,9 @@ async function sendReponseList(
     ConfigData.SERVER_URL + "/evaluation/correction",
     requestOptions
   );
-  console.log(response);
+  //console.log(response);
   if (!response.ok) {
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -129,7 +129,7 @@ async function sendReponseList(
   const result = await response.json();
 }
 function GetForm({ data, handleChild, index, token, type, correction }) {
-  console.log("GetForm", data);
+  //console.log("GetForm", data);
   if (type == "0") {
     return (
       <QuestionRapideForm
@@ -214,7 +214,7 @@ export default function CorrectionContent({
 
   const handleNext = async () => {
     if (activeStep === questionsListe.length - 1) {
-      console.log("handleNext", questionsListe);
+      //console.log("handleNext", questionsListe);
       await sendReponseList(
         dataQuestion,
         dataReponse,
@@ -234,7 +234,7 @@ export default function CorrectionContent({
   };
 
   useEffect(() => {
-    console.log("FormContent", dataQuestion, dataReponse);
+    //console.log("FormContent", dataQuestion, dataReponse);
     var pages = [];
 
     var item = { name: "", questions: [] };
@@ -281,25 +281,25 @@ export default function CorrectionContent({
 
     setQuestion([...pages]);
     setReponses(dataReponse);
-    console.log("FormContent questionsListe", questionsListe);
+    //console.log("FormContent questionsListe", questionsListe);
   }, [dataQuestion, dataReponse]);
 
   const handleChild = (data, index, field, v) => (e) => {
-    console.log("handleChildForm", data, index, field, v, e, reponseList);
+    //console.log("handleChildForm", data, index, field, v, e, reponseList);
     let newArr = [...questionsListe];
     let newArrRep = reponseList;
 
-    console.log("handleChild - questionsListe", newArr[activeStep].questions);
+    //console.log("handleChild - questionsListe", newArr[activeStep].questions);
     if (field == "update") {
       const {
         target: { value },
       } = e;
-      console.log(value);
+      //console.log(value);
       newArr[activeStep].questions[index].note = value;
     } else {
       if (field == "note") newArr[activeStep].questions[index].note = v;
     }
-    console.log(
+    //console.log(
       "handleChild - questionsListe",
       newArr[activeStep].questions[index].note
     );
@@ -310,8 +310,8 @@ export default function CorrectionContent({
         newArrRep.reponse[i].note = newArr[activeStep].questions[index].note;
     });
     setReponses(newArrRep);
-    console.log("newArr", newArrRep);
-    console.log(
+    //console.log("newArr", newArrRep);
+    //console.log(
       "handleChild - questionsListe",
       questionsListe[activeStep].questions[index].note
     );

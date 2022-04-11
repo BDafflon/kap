@@ -82,7 +82,7 @@ async function getCodeLive(module, token) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -161,7 +161,7 @@ function map(value, istart, istop, ostart, ostop) {
 function ShowReward({ item, reponseReward }) {
   var max = 0;
   reponseReward.forEach((element) => {
-    console.log("ShowReward", item, element);
+    //console.log("ShowReward", item, element);
     if (item.id == element.id) max = Math.max(max, element.reward);
   });
 
@@ -224,7 +224,7 @@ export default function LiveUser({ module, token }) {
       sock.on("already", already);
       sock.on("getReward", getReward);
 
-      console.log("join public", publickey);
+      //console.log("join public", publickey);
       var id = makeidInt(5);
       setVisiteurID(id);
 
@@ -245,14 +245,14 @@ export default function LiveUser({ module, token }) {
 
   const addReponse = (e) => {
     if (e.id_user == token.id) {
-      console.log("addReponse", e);
+      //console.log("addReponse", e);
       setReponseListUser((prevMessages) => [e, ...prevMessages]);
     }
   };
 
   const getReward = (e) => {
     if (e.id_user == token.id) {
-      console.log("getReward", e, reponseReward);
+      //console.log("getReward", e, reponseReward);
 
       setReponseReward((prevMessages) =>
         [e, ...prevMessages].filter(
@@ -268,7 +268,7 @@ export default function LiveUser({ module, token }) {
     sock.on("already", already);
     sock.on("getReward", getReward);
 
-    console.log("join ", streamID);
+    //console.log("join ", streamID);
     sock.emit("join", {
       name: "",
       room: streamID,
@@ -293,7 +293,7 @@ export default function LiveUser({ module, token }) {
   };
 
   const handleCloseLiveModal = () => {
-    console.log("close live");
+    //console.log("close live");
     sock.emit("leave", {
       name: "",
       room: streamID,
@@ -311,15 +311,15 @@ export default function LiveUser({ module, token }) {
 
   const joinPublic = (e) => {
     if (e.id == token.id) {
-      console.log("reponse join ", e);
+      //console.log("reponse join ", e);
       setTitre(e.titre);
       setStreamID(e.room);
     }
   };
   const already = (e) => {
     if (e.id == token.id) {
-      console.log("already", e);
-      console.log("Deja répondu", reponseList);
+      //console.log("already", e);
+      //console.log("Deja répondu", reponseList);
 
       setErreur(true);
       setErreurMsg("Déja répondu");
@@ -327,10 +327,10 @@ export default function LiveUser({ module, token }) {
   };
 
   const clearList = () => {
-    console.log("clearlistrep");
+    //console.log("clearlistrep");
     setReponseListUser([]);
 
-    console.log("clear", reponseList);
+    //console.log("clear", reponseList);
   };
   const addQuestion = (e) => {
     setProgress(0);
@@ -342,7 +342,7 @@ export default function LiveUser({ module, token }) {
     setQList([...t]);
     clearList();
     setUpdater((oldKey) => oldKey + 1);
-    console.log("question ->", updater, question, questionList, reponseList);
+    //console.log("question ->", updater, question, questionList, reponseList);
 
     var t = setInterval(() => {
       setProgress((oldProgress) => {
@@ -352,10 +352,10 @@ export default function LiveUser({ module, token }) {
         );
 
         if (x >= 100) {
-          console.log("Temps ecoulé ");
+          //console.log("Temps ecoulé ");
           setErreur(true);
           setErreurMsg("Temps ecoulé");
-          console.log("--------------- clear ---------------");
+          //console.log("--------------- clear ---------------");
 
           clearInterval(t);
         }
@@ -371,7 +371,7 @@ export default function LiveUser({ module, token }) {
 
   const handlLive = async () => {
     var rep = await getCodeLive(module, token);
-    console.log("live ", rep);
+    //console.log("live ", rep);
     setSession(rep);
     setOpenModalCodeGroupe(true);
   };
@@ -497,7 +497,7 @@ export default function LiveUser({ module, token }) {
                   id="demo-simple-select"
                   value={sessionIndex}
                   onChange={(event) => {
-                    console.log(sessions[event.target.value]);
+                    //console.log(sessions[event.target.value]);
                     setTitre(sessions[event.target.value].titre);
                     setStreamID(sessions[event.target.value].room);
                     setSessionIndex(event.target.value);

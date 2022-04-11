@@ -25,6 +25,8 @@ import CastForEducationIcon from "@mui/icons-material/CastForEducation";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Live from "./module/live/live";
+import DashboardAdmin from "./dashbordadmin";
+import Call from "./call";
 
 function GetModuleAdmin({
   module,
@@ -33,13 +35,14 @@ function GetModuleAdmin({
   listeExam,
   handleUpdate,
 }) {
-  console.log("GetModuleAdmin");
+  //console.log("GetModuleAdmin");
   return (
     <>
       {" "}
       <h1>Administration</h1>
       <h2>
-        {module.label} <Live module={module} token={token} />
+        {module.label} <Live module={module} token={token} />{" "}
+        <Call module={module} token={token} />
       </h2>
       <Box>
         <Grid container spacing={3}>
@@ -86,7 +89,7 @@ function GetModuleAdmin({
 }
 
 async function getRessources(token, module) {
-  console.log("getRessources", module);
+  //console.log("getRessources", module);
   const requestOptions = {
     method: "GET",
     mode: "cors",
@@ -103,7 +106,7 @@ async function getRessources(token, module) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -112,14 +115,14 @@ async function getRessources(token, module) {
   const result = await response.json();
   var data = [];
   result.forEach((element) => {
-    console.log("element", element);
+    //console.log("element", element);
     data.push(element);
   });
   return data;
 }
 
 async function getCorrection(token, module) {
-  console.log("getRessources", module);
+  //console.log("getRessources", module);
   const requestOptions = {
     method: "GET",
     mode: "cors",
@@ -136,7 +139,7 @@ async function getCorrection(token, module) {
   if (!response.ok) {
     localStorage.removeItem("token");
     window.location.reload(false);
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");
@@ -147,8 +150,8 @@ async function getCorrection(token, module) {
   return result;
 }
 
-export default function AdminContent({ module, token, type }) {
-  console.log("GetModuleAdmin");
+export default function AdminContent({ module, token, dashboardType }) {
+  //console.log("GetModuleAdmin");
   const [listRessource, setListRessource] = React.useState();
   const [listeExam, setListExam] = React.useState();
   const [updater, setUpdate] = React.useState(0);
@@ -156,7 +159,7 @@ export default function AdminContent({ module, token, type }) {
   useEffect(() => {
     async function load() {
       if (module != undefined) {
-        console.log("Module", module);
+        //console.log("Module", module);
         var res = await getRessources(token, module);
         setListRessource(res);
         var ex = await getCorrection(token, module);
@@ -167,7 +170,7 @@ export default function AdminContent({ module, token, type }) {
   }, [module]);
 
   const handleUpdate = () => {
-    console.log("update adin key");
+    //console.log("update adin key");
     setUpdate((oldKey) => oldKey + 1);
   };
   if (module != undefined && listRessource != undefined) {
@@ -182,9 +185,18 @@ export default function AdminContent({ module, token, type }) {
     );
   }
 
-  return (
-    <>
-      <h1>Administration</h1>
-    </>
-  );
+  if (dashboardType == 0) {
+    return (
+      <>
+        <h1>Administration</h1>
+        <DashboardAdmin token={token} />
+      </>
+    );
+  }
+
+  if (dashboardType == 1) {
+    return <></>;
+  }
+
+  return <></>;
 }

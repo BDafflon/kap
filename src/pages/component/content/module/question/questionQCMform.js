@@ -23,7 +23,7 @@ import Alert from '@mui/material/Alert';
 
 
 function GetAlert({data,essais,handleEssai,erreur}){
-  console.log("getalert",data,data.essais,erreur)
+  //console.log("getalert",data,data.essais,erreur)
   if(data.essais==undefined) return <></>
 
   if(!erreur){
@@ -148,7 +148,7 @@ export default function QuestionQCMForm ({data,handleChild, index,type,correctio
   };
 
   const handleChange = param =>event=>{
-    console.log(param,reponsesUser,event.target.checked)
+    //console.log(param,reponsesUser,event.target.checked)
     let items = [...reponsesUser];
     let item = {...items[param]};
     item = event.target.checked
@@ -183,11 +183,11 @@ export default function QuestionQCMForm ({data,handleChild, index,type,correctio
         RepUser.push(data.tabChoix[i])
     });
     
-    console.log("--------",RepUser,rep,RepUser.length,rep.length)
+    //console.log("--------",RepUser,rep,RepUser.length,rep.length)
     if(RepUser.length==rep.length)
     {
       const filteredArray = RepUser.filter(value => rep.includes(value));
-      console.log("-------->",RepUser,rep,filteredArray)
+      //console.log("-------->",RepUser,rep,filteredArray)
       if(filteredArray.length==rep.length)
         ok=true
       else
@@ -211,10 +211,10 @@ export default function QuestionQCMForm ({data,handleChild, index,type,correctio
   }
 
 
-    console.log("QuestionQCMForm",data)
+    //console.log("QuestionQCMForm",data)
     return(
         <>
-        {console.log("QuestionRapideForm",data)}
+        {//console.log("QuestionRapideForm",data)}
         <Box sx={{  p: 2.25, boxShadow: 1 }}>
          
                   <Typography >{"Question N°:"+data.order} (Barem :{data.barem} / difficulté:{data.difficulte}) </Typography> 
