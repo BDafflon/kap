@@ -223,7 +223,7 @@ export default function QuestionListForm ({data,handleChild, index,type, correct
     //console.log("QuestionListForm",data)
     return(
         <>
-        {//console.log("QuestionListForm",data)}
+ 
         <Box sx={{  p: 2.25, boxShadow: 1 }}>
          
                   <Typography >{"Question N°:"+data.order} (Barem :{data.barem} / difficulté:{data.difficulte}) </Typography> 

@@ -707,7 +707,7 @@ export default function Live({module,token}){
         </ListSubheader>
       }
     >
-      {//console.log(clients)}
+      
       {clients.map((client) => (
          
               <ListItem >

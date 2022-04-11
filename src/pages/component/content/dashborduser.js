@@ -125,13 +125,7 @@ async function getDevoir(token) {
 
 function getOpen(ressource) {
   var today = Math.round(new Date().getTime() / 1000);
-  //console.log(
-    "getOpen",
-    ressource,
-    today,
-    today >= ressource.dateO,
-    today <= ressource.dateF + 24 * 3600
-  );
+ 
 
   return (
     (today <= ressource.dateF + 24 * 3600 && today >= ressource.dateO) ||

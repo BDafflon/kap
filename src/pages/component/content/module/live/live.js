@@ -512,15 +512,7 @@ export default function Live({ module, token }) {
   };
 
   const handleSend = () => {
-    //console.log(
-      "click ",
-      reponsesList,
-      clearQL,
-      timer,
-      option,
-      question,
-      questionList
-    );
+    
     var datum = new Date();
     datum.setTime(timer);
     var seconds = datum.getSeconds();

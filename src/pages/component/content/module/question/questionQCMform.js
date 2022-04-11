@@ -214,7 +214,7 @@ export default function QuestionQCMForm ({data,handleChild, index,type,correctio
     //console.log("QuestionQCMForm",data)
     return(
         <>
-        {//console.log("QuestionRapideForm",data)}
+        
         <Box sx={{  p: 2.25, boxShadow: 1 }}>
          
                   <Typography >{"Question N°:"+data.order} (Barem :{data.barem} / difficulté:{data.difficulte}) </Typography> 

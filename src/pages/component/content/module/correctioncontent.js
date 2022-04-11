@@ -109,10 +109,7 @@ async function sendReponseList(
     }),
   };
 
-  //console.log(
-    "sendQuestionsList stringify",
-    JSON.stringify({ questionList: d, ressource: data })
-  );
+   
 
   const response = await fetch(
     ConfigData.SERVER_URL + "/evaluation/correction",
@@ -299,10 +296,7 @@ export default function CorrectionContent({
     } else {
       if (field == "note") newArr[activeStep].questions[index].note = v;
     }
-    //console.log(
-      "handleChild - questionsListe",
-      newArr[activeStep].questions[index].note
-    );
+    
 
     setQuestion(newArr);
     newArrRep.reponse.forEach((element, i) => {
@@ -311,10 +305,7 @@ export default function CorrectionContent({
     });
     setReponses(newArrRep);
     //console.log("newArr", newArrRep);
-    //console.log(
-      "handleChild - questionsListe",
-      questionsListe[activeStep].questions[index].note
-    );
+    
   };
 
   if (questionsListe.length == 0) return <></>;

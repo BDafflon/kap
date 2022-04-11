@@ -127,10 +127,7 @@ async function sendQuestionsList(data, questionsListe, token, timeLeft) {
     body: JSON.stringify({ questionList: d, ressource: data, timer: timeLeft }),
   };
 
-  //console.log(
-    "sendQuestionsList stringify",
-    JSON.stringify({ questionList: d, ressource: data })
-  );
+  
 
   const response = await fetch(
     ConfigData.SERVER_URL + "/evaluation/participation",
@@ -486,7 +483,6 @@ export default function FormContent({ data, handleClose, token }) {
         open={openTimer}
       >
         <Alert severity={getSeverity(data, timeLeft)} sx={{ width: "100%" }}>
-          {//console.log("timeLeft", timeLeft)}
           {"Timer :" + timeLeft}
         </Alert>
       </Snackbar>

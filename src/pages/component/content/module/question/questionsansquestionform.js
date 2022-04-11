@@ -24,7 +24,7 @@ export default function QuestionSansQuestionForm ({data,handleChild, index,type,
  
     return(
         <>
-        {//console.log("QuestionLongueForm",data)}
+  
         <Box sx={{  p: 2.25, boxShadow: 1 }}>
          
                   <Typography > </Typography> 

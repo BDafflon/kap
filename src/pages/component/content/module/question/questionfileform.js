@@ -136,7 +136,6 @@ export default function QuestionFileForm({
 
   return (
     <>
-      {//console.log("QuestionFileForm", data)}
       <Box sx={{ p: 2.25, boxShadow: 1 }}>
         <Typography>
           {"Question N°:" + data.order} (Barem :{data.barem} / difficulté:

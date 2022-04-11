@@ -265,7 +265,7 @@ export default function Call({ module, groupe, token }) {
 
 
       <Dialog open={motifOpen} onClose={handleCloseMotif}>
-        <DialogTitle>Exclusion {usersSubList[user].label}</DialogTitle>
+        <DialogTitle>Exclusion {usersSubList[user]!=undefined? usersSubList[user].label:"Erreur"}</DialogTitle>
         <DialogContent>
           <DialogContentText>
              

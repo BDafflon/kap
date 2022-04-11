@@ -116,10 +116,7 @@ export default function CardActivity({ data, token, limit }) {
         >
           {listActivity.map((item, index) => (
             <Box>
-              {//console.log(
-                "item",
-                item.eval == undefined ? "" : item.eval.note
-              )}
+              
               <ListItemButton alignItems="flex-start">
                 <ListItemAvatar>
                   {item.eval == undefined ? (
