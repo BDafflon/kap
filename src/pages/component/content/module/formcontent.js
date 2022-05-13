@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from 'react'
 import { useEffect } from "react";
 import QuestionRapideForm from "./question/questionrapideform";
 import QuestionLongueForm from "./question/questionlongueform";
@@ -127,8 +127,6 @@ async function sendQuestionsList(data, questionsListe, token, timeLeft) {
     body: JSON.stringify({ questionList: d, ressource: data, timer: timeLeft }),
   };
 
-  
-
   const response = await fetch(
     ConfigData.SERVER_URL + "/evaluation/participation",
     requestOptions
@@ -250,6 +248,8 @@ export default function FormContent({ data, handleClose, token }) {
   const [activeStep, setActiveStep] = React.useState(0);
   const [correction, setCorrection] = React.useState(false);
   const [sent, setSent] = React.useState(false);
+  const [updater, setUpdater] = useState(0);
+
   const [openTimer, setOpenTimer] = React.useState(true);
   const [timeStart, setTimeStart] = React.useState(
     Math.round(new Date() / 1000)
@@ -263,7 +263,7 @@ export default function FormContent({ data, handleClose, token }) {
       await sendQuestionsList(data, questionsListe, token, timeLeft);
       setQuestion([]);
       setSent(true);
-      handleClose(true);
+      handleClose(true)(null);
     }
 
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -382,11 +382,12 @@ export default function FormContent({ data, handleClose, token }) {
           var {
             target: { value },
           } = e;
-
+          console.log("value",value)
           questionsListe[activeStep].questions[index].reponseuser = value;
         }
       }
     }
+    setUpdater(oldKey => oldKey + 1)
 
     //console.log("handleChild - questionsListe", questionsListe);
   };

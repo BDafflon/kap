@@ -287,7 +287,7 @@ function GetReponseForm({ handleReward, index, item }) {
         <>
           {" "}
           <Typography>Question {index}: </Typography>{" "}
-          <MarkdownPreview source={"#"+item.question} />{" "}
+          <MarkdownPreview source={"# "+item.question} />{" "}
         </>
       );
 
@@ -473,7 +473,9 @@ export default function Live({ module, token }) {
 
   const handleChangePublic = async (event) => {
     setPublic(event.target.checked);
-    await openLive(event.target.checked, streamID, token, publicKey);
+    var pk = makeid(5)
+    setPublicKey(pk)
+    await openLive(event.target.checked, streamID, token, pk);
   };
 
   useEffect(() => {

@@ -217,6 +217,10 @@ export default function Module({ module, token }) {
     }
     load();
   }, []);
+
+  const handleUpdater = () => {
+    console.log("module handleUpdater");
+  };
   return (
     <Box>
       <Grid container spacing={2}>
@@ -233,7 +237,8 @@ export default function Module({ module, token }) {
                 </ListSubheader>
               }
             >
-              {devoirs == undefined ? (
+              {devoirs == undefined ||
+              devoirs[module.id_module] == undefined ? (
                 <></>
               ) : (
                 devoirs[module.id_module].slice(0, 1).map((devoir, i) => (
@@ -284,26 +289,21 @@ export default function Module({ module, token }) {
                 </ListSubheader>
               }
             >
-              {exam == undefined ? (
+              {exam == undefined || exam[module.id_module] == undefined ? (
                 <></>
               ) : (
-                exam[module.id_module].slice(0, 1).map((devoir, i) => (
+                exam[module.id_module].slice(0, 1).map((ex, i) => (
                   <Box>
+                    {console.log("ex", ex)}
                     <ListItemButton
-                      disabled={
-                        !(
-                          (devoir.dateO < new Date().getTime() / 1000 &&
-                            devoir.dateF > new Date().getTime() / 1000) ||
-                          devoir.dateO == 0
-                        )
-                      }
+                      disabled={!ModuleUtile.getOpen(ex.ressource)}
                       alignItems="flex-start"
                     >
                       <ListItemIcon>
                         <HomeWorkIcon />
                       </ListItemIcon>
                       <ListItemText
-                        primary={devoir.titre}
+                        primary={ex.ressource.titre}
                         secondary={
                           <React.Fragment>
                             <Typography
@@ -312,7 +312,7 @@ export default function Module({ module, token }) {
                               variant="body2"
                               color="text.primary"
                             >
-                              {getDate(devoir.dateF)}
+                              {getDate(ex.ressource.dateF)}
                             </Typography>{" "}
                           </React.Fragment>
                         }
@@ -327,7 +327,11 @@ export default function Module({ module, token }) {
               )}
             </List>
 
-            <CardRessource data={module} token={token} />
+            <CardRessource
+              data={module}
+              token={token}
+              handleUpdater={handleUpdater}
+            />
 
             <CardActivity data={module} token={token} />
           </Stack>

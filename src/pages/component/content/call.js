@@ -17,6 +17,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PropType from "prop-types";
 import ConfigData from "../../../utils/configuration.json";
+import * as UserManager from "../../../utils/userManager";
 import getDate from "../../../utils/timestamptodate";
 import { useEffect } from "react";
 import CardRessource from "./module/cardressource";
@@ -79,15 +80,7 @@ function getUser(id,users){
 }
 
 async function getUsers(token) {
-  var data = await fetch(ConfigData.SERVER_URL + "/users", {
-    method: "GET",
-    mode: "cors",
-    headers: {
-      "x-access-token": token.token,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-  }).then((response) => response.json());
+  var data = await UserManager.getUsers(token,1)
 
   //console.log("data user", data);
 

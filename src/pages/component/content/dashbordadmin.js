@@ -18,6 +18,7 @@ import CardActivity from "./module/cardactivity";
 import Ranking from "./module/ranking";
 import HomeWorkIcon from "@mui/icons-material/HomeWork";
 import ConfigData from "../../../utils/configuration.json";
+import * as UserManager from "../../../utils/userManager";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import PanToolIcon from "@mui/icons-material/PanTool";
 import IconButton from "@mui/material/IconButton";
@@ -26,6 +27,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import { getOptionGroupUnstyledUtilityClass } from "@mui/base";
 import FolderIcon from "@mui/icons-material/Folder";
 import ListItem from "@mui/material/ListItem";
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 function getDate(d) {
   if (d == 0) return <span>&#8734;</span>;
@@ -140,25 +142,16 @@ async function getGroupes(token) {
 }
 
 async function getUser(token) {
-  var data = await fetch(ConfigData.SERVER_URL + "/users", {
-    method: "GET",
-    mode: "cors",
-    headers: {
-      "x-access-token": token.token,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-  }).then((response) => response.json());
-
+  var data = await  UserManager.getAllUsers(token)
   //console.log("data user", data);
 
-  data.users.forEach((element) => {
+  data.forEach((element) => {
     element.label = element.firstname + " - " + element.lastname;
   });
 
-  data.users.sort((a, b) => (a.label > b.label ? 1 : b.name > a.name ? -1 : 0));
+  data.sort((a, b) => (a.label > b.label ? 1 : b.name > a.name ? -1 : 0));
   //console.log("data ", data.users);
-  return data.users;
+  return data;
 }
 
 export default function DashboardAdmin({ token }) {
@@ -220,13 +213,44 @@ export default function DashboardAdmin({ token }) {
               sx={{ width: 300 }}
               renderInput={(params) => <TextField {...params} label="Groupe" />}
             />
+            <Autocomplete
+              fullWidth
+              onChange={(event, newInputValue) => {
+                if (newInputValue == null) newInputValue = groupes[0];
+                setValueGroup(newInputValue);
+                if (newInputValue.id == -1) {
+                  setUserSubList(users);
+                  return;
+                }
+                var data = [];
+                users.forEach((element) => {
+                  if (element.groupe != null && element.groupe != undefined) {
+                    if (
+                      element.groupe
+                        .split(";")
+                        .includes(newInputValue.id.toString())
+                    )
+                      data.push(element);
+                  }
+                });
+                setUserSubList(data);
+                //console.log("setValueGroup", newInputValue.id, data);
+              }}
+              disablePortal
+              id="combo-box-demo"
+              options={groupes}
+              sx={{ width: 300 }}
+              renderInput={(params) => <TextField {...params} label="Nom/Prenom" />}
+            />
             <List dense>
               {usersSubList.map((user, i) => (
                 <ListItem>
                   <ListItemIcon>
                     <FolderIcon />
+                    <AdminPanelSettingsIcon color={user.rank==0?"success":"disabled"} />
                   </ListItemIcon>
-                  <ListItemText primary={user.label} />
+                  <ListItemText  primary={user.label} />
+                  
                 </ListItem>
               ))}
             </List>

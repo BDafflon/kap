@@ -1,37 +1,21 @@
 import { useEffect } from "react";
 import * as React from "react";
 // material-ui
-import { BrowserRouter, Route, Routes, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
-import { Avatar, Divider, Typography, Box, Button } from "@mui/material";
+import { Typography, Box, Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import IconButton from "@mui/material/IconButton";
-import FolderIcon from "@mui/icons-material/Folder";
-import DeleteIcon from "@mui/icons-material/Delete";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 // project imports
-import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import { yellow, grey, green } from "@mui/material/colors";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import ShuffleIcon from "@mui/icons-material/Shuffle";
+import { yellow, grey } from "@mui/material/colors";
 import ConfigData from "../../../../../utils/configuration.json";
-import GroupAddRoundedIcon from "@mui/icons-material/GroupAddRounded";
+import * as LiveManager from "../../../../../utils/liveManager";
+
 import CastForEducationIcon from "@mui/icons-material/CastForEducation";
 import Grid from "@mui/material/Grid";
-import AdapterDateFns from "@mui/lab/AdapterDateFns";
-import LocalizationProvider from "@mui/lab/LocalizationProvider";
-import TimePicker from "@mui/lab/TimePicker";
-import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -39,7 +23,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import InputLabel from "@mui/material/InputLabel";
 import io from "socket.io-client";
-import Stack from "@mui/material/Stack";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -159,11 +142,8 @@ function map(value, istart, istop, ostart, ostop) {
 }
 
 function ShowReward({ item, reponseReward }) {
-  var max = 0;
-  reponseReward.forEach((element) => {
-    //console.log("ShowReward", item, element);
-    if (item.id == element.id) max = Math.max(max, element.reward);
-  });
+  var max = item.reward;
+   
 
   var colorReward = grey[900];
 
@@ -225,10 +205,14 @@ export default function LiveUser({ module, token }) {
       sock.on("getReward", getReward);
 
       //console.log("join public", publickey);
+      if(visiteurID==""){
       var id = makeidInt(5);
       setVisiteurID(id);
-
       sock.emit("joinpublic", { name: id, publickey: publickey });
+      }
+      else
+        sock.emit("joinpublic", { name: visiteurID, publickey: publickey });
+      
 
       setOpenModalCodeGroupe(false);
       setOpenLiveModal(true);
@@ -237,28 +221,48 @@ export default function LiveUser({ module, token }) {
     return () => {
       clearInterval(timerC);
     };
-  }, [module, updater]);
+  }, [module, updater,reponseListUser]);
 
   const handleCloseCodeGroupe = async () => {
     setOpenModalCodeGroupe(false);
   };
 
-  const addReponse = (e) => {
-    if (e.id_user == token.id) {
-      //console.log("addReponse", e);
-      setReponseListUser((prevMessages) => [e, ...prevMessages]);
+  const addReponse = async (e) => {
+    
+    
+     
+
+    console.log("addReponse",visiteurID, new Date().getTime(),e,reponseListUser);
+    if(token == undefined){
+      if(visiteurID == "") return
+      if(visiteurID==e.id_user){
+        setReponseListUser(await LiveManager.getResponse(visiteurID,e.question.id_live,e.question.id));
+      }
     }
+    else{
+      if (e.id_user == token.id) {
+        setReponseListUser(await LiveManager.getResponse(token.id,e.question.id_live,e.question.id));
+        
+      }
+    }
+    
+
+    
   };
 
-  const getReward = (e) => {
-    if (e.id_user == token.id) {
-      //console.log("getReward", e, reponseReward);
-
-      setReponseReward((prevMessages) =>
-        [e, ...prevMessages].filter(
-          (v, i, a) => a.findIndex((v2) => v2.id === v.id) === i
-        )
-      );
+  const getReward = async(e) => {
+     console.log("getReward", e);
+    if(token == undefined){
+      if(visiteurID == "") return
+      if(visiteurID==e.id_user){
+        setReponseListUser(await LiveManager.getResponse(visiteurID,e.id_live,e.id_RessourceLiveDetail));
+      }
+    }
+    else{
+      if (e.id_user == token.id) {
+        await setReponseListUser((prevMessages) => [e, ...prevMessages]);
+        
+      }
     }
   };
 
@@ -310,13 +314,22 @@ export default function LiveUser({ module, token }) {
   };
 
   const joinPublic = (e) => {
-    if (e.id == token.id) {
+    console.log(e)
+   
       //console.log("reponse join ", e);
       setTitre(e.titre);
       setStreamID(e.room);
-    }
+   
   };
   const already = (e) => {
+    console.log("already",e,visiteurID)
+    if(token == undefined){
+      if(visiteurID==e.id){
+        setErreur(true);
+        setErreurMsg("Déja répondu");
+      }
+    }
+    else{
     if (e.id == token.id) {
       //console.log("already", e);
       //console.log("Deja répondu", reponseList);
@@ -324,15 +337,16 @@ export default function LiveUser({ module, token }) {
       setErreur(true);
       setErreurMsg("Déja répondu");
     }
+  }
   };
 
-  const clearList = () => {
+  const clearList = async () => {
     //console.log("clearlistrep");
-    setReponseListUser([]);
-
+   await setReponseListUser([]);
+    setUpdater((oldKey) => oldKey + 1);
     //console.log("clear", reponseList);
   };
-  const addQuestion = (e) => {
+  const addQuestion = async (e) => {
     setProgress(0);
 
     setErreur(false);
@@ -340,7 +354,7 @@ export default function LiveUser({ module, token }) {
     var t = questionList;
     t.push(e);
     setQList([...t]);
-    clearList();
+    await clearList();
     setUpdater((oldKey) => oldKey + 1);
     //console.log("question ->", updater, question, questionList, reponseList);
 

@@ -22,6 +22,7 @@ import RessourceView from "./ressourceview";
 import ListSubheader from "@mui/material/ListSubheader";
 // project imports
 import TypeRessource from "../../../../utils/typeressources";
+import * as ModuleUtile from "../../../../utils/moduleutile";
 import ConfigData from "../../../../utils/configuration.json";
 import ModalRessource from "./modalressource";
 
@@ -61,31 +62,6 @@ async function getRessources(module, token, limit) {
   return data;
 }
 
-function getDate(d) {
-  if (d == 0) return <span>&#8734;</span>;
-  var date_not_formatted = new Date(d);
-
-  var formatted_string = date_not_formatted.getFullYear() + "-";
-
-  if (date_not_formatted.getMonth() < 9) {
-    formatted_string += "0";
-  }
-  formatted_string += date_not_formatted.getMonth() + 1;
-  formatted_string += "-";
-
-  if (date_not_formatted.getDate() < 10) {
-    formatted_string += "0";
-  }
-  formatted_string += date_not_formatted.getDate();
-  return formatted_string;
-}
-
-function GetDivider({ index, size }) {
-  //console.log("Div", index, size);
-  if (index == size) return <></>;
-  return <Divider />;
-}
-
 export default function CardRessource({ data, token, limit, handleUpdater }) {
   const [listRessource, setList] = React.useState([]);
   const [openRessource, setOpen] = React.useState(false);
@@ -93,6 +69,7 @@ export default function CardRessource({ data, token, limit, handleUpdater }) {
   const [ressource, setRessource] = React.useState({ titre: "" });
   const [openAlert, setOpenAlert] = React.useState(false);
   const [updater, setUpdater] = React.useState(0);
+  const [save, setSave] = React.useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,14 +92,15 @@ export default function CardRessource({ data, token, limit, handleUpdater }) {
   };
 
   const closeModal = (p) => (event, reason) => {
-    //console.log("close Modal ", p);
+    console.log("close Modal ", p);
     if ((reason && reason == "backdropClick") || reason == "escapeKeyDown")
       return;
+
     setUpdater((oldKey) => oldKey + 1);
     handleUpdater(null);
 
     if (p == undefined || p == false) setOpenAlert(true);
-    else setOpen(false);
+    else setOpenModal(false);
   };
 
   return (
@@ -139,12 +117,7 @@ export default function CardRessource({ data, token, limit, handleUpdater }) {
           {listRessource.map((item, index) => (
             <Box>
               <ListItemButton
-                disabled={
-                  !(
-                    (item.dateO < Date() && item.dateF > Date()) ||
-                    item.dateO == 0
-                  )
-                }
+                disabled={!ModuleUtile.getOpen(item)}
                 alignItems="flex-start"
                 onClick={handleRessource(item)}
               >
@@ -164,13 +137,16 @@ export default function CardRessource({ data, token, limit, handleUpdater }) {
                         variant="body2"
                         color="text.primary"
                       >
-                        du {getDate(item.dateO)} au {getDate(item.dateF)}
+                        du {ModuleUtile.getDate(item)[0]} au {ModuleUtile.getDate(item)[1]}
                       </Typography>{" "}
                     </React.Fragment>
                   }
                 />
               </ListItemButton>
-              <GetDivider index={index + 1} size={listRessource.length} />
+              <ModuleUtile.GetDivider
+                index={index + 1}
+                size={listRessource.length}
+              />
             </Box>
           ))}
         </List>
@@ -181,7 +157,8 @@ export default function CardRessource({ data, token, limit, handleUpdater }) {
         data={ressource}
         updater={updater}
         token={token}
-        handleClose={closeModal}
+        save={save}
+        closeModal={closeModal}
       />
     </>
   );
