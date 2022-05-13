@@ -2,6 +2,26 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+
+class RessourceSetting(db.Model):
+    __tablename__ ='ressourcesetting'
+    id = db.Column(db.Integer, primary_key=True)
+    id_groupe = db.Column(db.Integer)
+    id_ressource= db.Column(db.Integer)
+    id_type_ressource = db.Column(db.Integer)
+    dateO = db.Column(db.Integer)
+    dateF = db.Column(db.Integer)
+    def serialize(self):
+        return {
+            'id': self.id,
+            'id_ressource': self.id_ressource,
+            'id_type_ressource': self.id_type_ressource,
+            "dateO": self.dateO,
+            'dateF': self.dateF,
+            'id_groupe': self.id_groupe,
+
+        }
+
 class Absence(db.Model):
     __tablename__ ='absence'
     id = db.Column(db.Integer, primary_key=True)
@@ -129,6 +149,7 @@ class RessourceText(db.Model):
     content = db.Column(db.Text())
     dateO= db.Column(db.Integer)
     dateF = db.Column(db.Integer)
+    maxTry = db.Column(db.Integer)
     def serialize(self):
         return {
             'id':self.id,
@@ -140,6 +161,7 @@ class RessourceText(db.Model):
             'content': self.content,
             'dateO': self.dateO,
             'dateF': self.dateF,
+            'maxTry': self.maxTry,
         }
 
 
@@ -156,6 +178,7 @@ class RessourceQestions(db.Model):
     questionAleatoire = db.Column(db.Integer)
     id_owner = db.Column(db.Integer)
     timer = db.Column(db.Integer)
+    maxTry= db.Column(db.Integer)
 
     def serialize(self):
         return {
@@ -170,6 +193,7 @@ class RessourceQestions(db.Model):
             'dateO': self.dateO,
             'dateF': self.dateF,
             'timer':self.timer,
+            'maxTry':self.maxTry,
         }
 
 
@@ -320,6 +344,7 @@ class Module(db.Model):
     name = db.Column(db.String(50))
     id_formation = db.Column(db.Integer)
     id_owner = db.Column(db.Integer)
+    share_with = db.Column(db.String(50))
     intro = db.Column(db.Text())
     def serialize(self):
         return {
@@ -327,7 +352,8 @@ class Module(db.Model):
             'name':self.name,
             'id_formation':self.id_formation,
             'id_owner':self.id_owner,
-            'intro':self.intro
+            'intro':self.intro,
+            "share_with":self.share_with
         }
 
 class User(db.Model):
@@ -349,6 +375,7 @@ class User(db.Model):
             'lastname':self.lastname,
             'mail':self.mail,
             'formation':self.formation,
-            'groupe':self.groupe
+            'groupe':self.groupe,
+            'rank':self.rank
         }
 
