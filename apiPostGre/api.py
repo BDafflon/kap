@@ -22,6 +22,9 @@ from live import LiveData
 from models import db, User, Formation, Affectation, Groupe, RessourceStat, RessourceText, RessourceQestions, \
     Evaluation, Module, Question, Media, ReponseEvaluation, RessourceLive, RessourceLiveDetail, \
     RessourceLiveParticipation, RessourceSetting
+from engineio.payload import Payload
+
+Payload.max_decode_packets = 5000
 
 app = Flask(__name__)
 app.config['CORS_HEADERS'] = '*'
@@ -37,9 +40,9 @@ ALLOWED_EXTENSIONS = {'txt', 'doc', 'dox', 'jpg', 'jpeg', 'png', 'xls', 'xlsx', 
 db.init_app(app)
 migrate = Migrate(app, db)
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*",ping_timeout=5, ping_interval=5)
 
-liveUser = LiveData()
+liveUser = {}
 
 
 @app.route('/')
@@ -88,11 +91,20 @@ def on_join(data):
         live.room = data["room"]
         db.session.add(live)
         db.session.commit()
-        liveUser.rooms[data["room"]]=[]
-    if dataId not in  liveUser.rooms[data["room"]]:
-        liveUser.rooms[live.room].append(data["name"])
-        join_room(data["room"])
-        emit('addClient', {'name': current_user.firstname+" "+current_user.lastname,'id':dataId['id']}, broadcast=True, room=data["room"])
+        liveUser[current_user.id]=LiveData()
+        join_room(liveUser[current_user.id].roomProf)
+        print("j",live)
+
+    if current_user.rank != 0:
+        if data["room"] not in liveUser.keys():
+            return
+        if dataId not in  liveUser[data["room"]]:
+            live = RessourceLive.query.filter_by(room=data["room"]).first()
+            if live is not None:
+                if current_user.id not in liveUser[live.id_owner].listEtu:
+                    liveUser[live.id_owner].listEtu.append(data["name"])
+                    join_room(data["name"])
+                    emit('addClient', {'name': current_user.firstname+" "+current_user.lastname,'id':dataId['id']}, broadcast=True, room=liveUser[live.id_owner].roomProf)
 
 
 
@@ -104,26 +116,30 @@ def on_reward(data):
     for d in data['reponsesList']:
         reponse = RessourceLiveParticipation.query.filter_by(content=d['content'],id_RessourceLiveDetail=d["id_RessourceLiveDetail"],id_user=d['id_user']).first()
         if reponse is not None:
+            liveDetail = RessourceLiveDetail.query.filter_by(id=reponse.id_RessourceLiveDetail).first()
+            live = RessourceLive.query.filter_by(id=liveDetail.id_live).first()
             reponse.reward=d["reward"]
             db.session.commit()
             rs = reponse.serialize()
             rs["id_live"]=d["question"]["id_live"]
             print("r",rs)
-            emit('getReward',rs,broadcast=True, room=data["room"])
+            for c in liveUser[live.id_owner].listEtu:
+                emit('getReward',rs,broadcast=True, room=c)
+
 
 
 @socketio.on('joinpublic')
 def on_join_public(data):
-    print("Joining public !",liveUser.rooms)
+    print("Joining public !",liveUser)
     print('on_join!', data)
     pkey = data["publickey"]
     live = RessourceLive.query.filter_by(public_key=pkey).first()
     if live is not None:
-        if data["name"] not in liveUser.rooms[live.room]:
-            liveUser.rooms[live.room].append(data["name"])
-            join_room(live.room)
-            emit("joinpublic",{"titre":live.titre, "room":live.room})
-            emit('addClient',{'name':"visiteur "+str(data["name"])},broadcast=True, room=live.room)
+        if data["name"] not in liveUser[live.id_owner].listEtu:
+            liveUser[live.id_owner].listEtu.append(data["name"])
+            join_room(data["name"])
+            emit("joinpublic",{"titre":live.titre, "room":data["name"]})
+            emit('addClient',{'name':"visiteur "+str(data["name"])},broadcast=True, room=liveUser[live.id_owner].roomProf)
 
 
 
@@ -141,7 +157,7 @@ def on_liveReponse(data):
     dataId={}
     current_user=None
     if data["visiteurID"]!="":
-        print("public rep")
+        print("public rep",liveUser[2].listEtu)
         dataId['id']=data["visiteurID"]
     else:
         token = data["token"]["token"]
@@ -152,20 +168,20 @@ def on_liveReponse(data):
     detail = RessourceLiveDetail.query.filter_by(id=data["question"]['id']).first()
     if detail is not None:
         if detail.dateF > datetime.datetime.now().timestamp():
-            live = RessourceLive.query.filter_by(room=data["room"]).first()
+            live = RessourceLive.query.filter_by(id=detail.id_live).first()
             if live is not None:
                 if detail.reponseunique==1:
                     print("rep unique ",data["question"])
                     rep = RessourceLiveParticipation.query.filter_by(id_RessourceLiveDetail=data["question"]['id'],id_user=dataId['id']).all()
                     print("rep unique ",len(rep),dataId['id'])
                     if len(rep)!=0:
-                        emit("already", {'id':dataId['id']},  room=data["room"])
+                        emit("already", {'id':dataId['id']},  room=dataId['id'])
                         return
 
                 rep = RessourceLiveParticipation.query.filter_by(id_RessourceLiveDetail=data["question"]['id'],id_user=dataId['id'],content=data["reponse"]).all()
                 if len(rep)!=0 :
                     print("spam",rep)
-                    emit("already", {'id': dataId['id']}, room=data["room"])
+                    emit("already", {'id': dataId['id']}, room=dataId['id'])
                     return
 
 
@@ -183,9 +199,9 @@ def on_liveReponse(data):
 
                 if current_user is not None:
                     rs["user"]=current_user.serialize()
-                print("send rép",liveUser.rooms,rs)
-                emit("addReponse", rs, broadcast=True, room=data["room"])
-                emit('reponseValide',rs,broadcast=True, room=data["room"])
+                print("send rép",dataId['id'],rs)
+                emit("addReponse", rs, broadcast=True, room=liveUser[live.id_owner].roomProf)
+                emit('reponseValide',rs,broadcast=True, room=dataId['id'])
 
 
 
@@ -212,7 +228,8 @@ def on_liveQuestion(data):
             detail.dateF=datetime.datetime.now().timestamp()+data["timer"]
             db.session.add(detail)
             db.session.commit()
-            emit("addQuestion",detail.serialize(),broadcast=True,room=data["room"])
+            for c in liveUser[current_user.id].listEtu:
+                emit("addQuestion",detail.serialize(),broadcast=True,room=c)
 
 
 
@@ -731,7 +748,7 @@ def get_ressource_module(current_user,id):
         res = json.loads(rs["groupes"].replace("\'", "\""))
         for g in res:
             print("g",g)
-            if str(g["id"]) in current_user.groupe.split(";") :
+            if current_user.id==rs["id_owner"] or str(g["id"]) in current_user.groupe.split(";") :
                 rs["setting"][g["id"]]={'id_ressource': r.id,
                                 'id_type_ressource': r.type,
                                 "dateO": 0,
@@ -771,7 +788,7 @@ def get_ressource_module(current_user,id):
         res = json.loads(rs["groupes"].replace("\'", "\""))
         for g in res:
             print("g",g)
-            if str(g["id"]) in current_user.groupe.split(";") :
+            if current_user.id==rs["id_owner"] or str(g["id"]) in current_user.groupe.split(";") :
                 rs["setting"][g["id"]]={'id_ressource': r.id,
                                 'id_type_ressource': r.type,
                                 "dateO": 0,
@@ -1419,6 +1436,23 @@ def modules_affectation(current_user):
         return jsonify(a.serialize())
 
 #----------------------------------------- USER ------------------------------
+
+
+
+@app.route('/updaterank/<int:id>', methods=['GET'])
+@token_required
+def update_rank(current_user,id):
+    if current_user.rank!=0:
+        return jsonify({'message' : 'Cannot perform that function!'})
+    if id == current_user.id:
+        return jsonify({'erreur' : 'Cannot perform that function!'})
+    user = User.query.filter_by(id=id).first()
+    if user is not None:
+        user.rank = 0 if user.rank==1 else 1
+        db.session.commit()
+    return jsonify(user.serialize())
+
+
 @app.route('/user', methods=['GET'])
 @token_required
 def get_user(current_user):
