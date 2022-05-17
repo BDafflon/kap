@@ -34,7 +34,7 @@ class DragAndDrop extends Component {
     e.preventDefault()
     e.stopPropagation()
     this.setState({ drag: false })
-    console.log(e.dataTransfer)
+    //console.log(e.dataTransfer)
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       this.props.handleDrop(e.dataTransfer.files,e)
       e.dataTransfer.clearData()

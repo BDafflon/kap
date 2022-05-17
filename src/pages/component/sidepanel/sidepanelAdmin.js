@@ -9,6 +9,8 @@ import Dns from '@mui/icons-material/Dns'
 import ListItemButton from '@mui/material/ListItemButton'
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown'
 import useToken from '../../../utils/useToken'
+import * as UsersManager from '../../../utils/userManager'
+import * as ModuleManager from '../../../utils/moduleManager'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import Dialog from '@mui/material/Dialog'
@@ -60,7 +62,7 @@ async function generateCode(token, groupeSelected){
       if (!response.ok) {
         localStorage.removeItem('token')
         window.location.reload(false)
-        console.log(response)
+        //console.log(response)
       }
       if (response.status == 401) {
         localStorage.removeItem('token')
@@ -87,7 +89,7 @@ async function deleteCodeGroupe(token, groupeSelected){
   if (!response.ok) {
     localStorage.removeItem('token')
     window.location.reload(false)
-    console.log(response)
+    //console.log(response)
   }
   if (response.status == 401) {
     localStorage.removeItem('token')
@@ -95,7 +97,7 @@ async function deleteCodeGroupe(token, groupeSelected){
   }
 }
 async function trashAffectation(token,value){
-  console.log("trash",value)
+  //console.log("trash",value)
   const requestOptions = {
     method: 'DELETE',
     mode: 'cors',
@@ -112,7 +114,7 @@ async function trashAffectation(token,value){
   if (!response.ok) {
     localStorage.removeItem('token')
     window.location.reload(false)
-    console.log(response)
+    //console.log(response)
   }
   if (response.status == 401) {
     localStorage.removeItem('token')
@@ -137,7 +139,7 @@ async function registerFormation (token, value) {
   fetch(ConfigData.SERVER_URL + '/formation/registration', requestOptions)
     .then(response => response.json())
     .catch(error => {
-      console.log('error', error)
+      //console.log('error', error)
     })
 }
 
@@ -155,7 +157,7 @@ async function addGroupeToModule (token, groupe, module) {
   fetch(ConfigData.SERVER_URL + '/module/affectation', requestOptions)
     .then(response => response.json())
     .catch(error => {
-      console.log('error', error)
+      //console.log('error', error)
     })
 }
 
@@ -181,7 +183,7 @@ async function registerGroupe (token, value, formation) {
     })
     .then(response => response.json())
     .catch(error => {
-      console.log('error', error)
+      //console.log('error', error)
     })
 }
 
@@ -205,7 +207,7 @@ async function updateModule (token, value, module) {
       }
     })
     .catch(error => {
-      console.log('error', error)
+      //console.log('error', error)
     })
 }
 
@@ -229,7 +231,7 @@ async function registerModule (token, value,moduleResume, formation) {
       }
     })
     .catch(error => {
-      console.log('error', error)
+      //console.log('error', error)
     })
 }
 
@@ -257,14 +259,14 @@ async function getModules (token, formation) {
   if (!response.ok) {
     localStorage.removeItem('token')
     window.location.reload(false);
-    console.log(response)
+    //console.log(response)
   }
   if (response.status == 401) {
     localStorage.removeItem('token')
     window.location.reload(false);
   }
   const result = await response.json()
-  console.log('getMedia', result)
+  //console.log('getMedia', result)
   return result
 }
 
@@ -287,14 +289,14 @@ async function getAffectation (token) {
   if (!response.ok) {
     localStorage.removeItem('token')
     window.location.reload(false);
-    console.log(response)
+    //console.log(response)
   }
   if (response.status == 401) {
     localStorage.removeItem('token')
     window.location.reload(false);
   }
   const result = await response.json()
-  console.log('getMedia', result)
+  //console.log('getMedia', result)
   return result
 }
 
@@ -312,7 +314,7 @@ async function getFormation () {
     ConfigData.SERVER_URL + '/formations',
     requestOptions
   ).catch((error) => {
-    console.log(error)
+    //console.log(error)
   });
   
   if(response == undefined)
@@ -323,14 +325,14 @@ async function getFormation () {
   if (!response.ok) {
     localStorage.removeItem('token')
     window.location.reload(false);
-    console.log(response)
+    //console.log(response)
   }
   if (response.status == 401) {
     localStorage.removeItem('token')
     window.location.reload(false);
   }
   const result = await response.json()
-  console.log('getFormation', result)
+  //console.log('getFormation', result)
   return result
 }
 
@@ -354,7 +356,7 @@ const Alert = React.forwardRef(function Alert (props, ref) {
 })
 
 export default function SidePanelAdmin ({props}) {
-  console.log("props SAdmin", props)
+  //console.log("props SAdmin", props)
   const [openConfig, setOpenConfig] = React.useState(true)
   const token = props.token;
   const [openModalFormation, setOpenModalFormation] = React.useState(false)
@@ -377,6 +379,7 @@ export default function SidePanelAdmin ({props}) {
   const [moduleSelected, setDataModuleSelected] = useState([])
   const [groupeSelected, setDataGroupeSelected] = useState(null)
   const [moduleAdded, setOpenSnackbarsModule] = React.useState(false)
+  const [shareModule, setOpenSnackbarsShare] = React.useState(false)
   const [groupeAdded, setOpenSnackbarsGroupe] = React.useState(false)
   const [formationAdded, setOpenSnackbarsFormation] = React.useState(false)
   const [tabValue, setTabValue] = React.useState('1')
@@ -384,6 +387,12 @@ export default function SidePanelAdmin ({props}) {
   const [ressourceIdEdition, setressourceIdEdition] = React.useState()
   const [openModalCodeGroupe, setOpenModalCodeGroupe] = React.useState(false)
   const [codeGroupe, setCodeGroupe] = React.useState("")
+  const [adminUser, setAdminUser] = useState([])
+  const [share, setShare] = useState([])
+  const [selectedAdmin, setSelectedAdmin] = React.useState()
+  const [selecteShare, setSelectedShare] = React.useState()
+ 
+
 
   const handleClickOpenModal = param => e => {
     if (param == 'Formations') setOpenModalFormation(true)
@@ -490,6 +499,30 @@ export default function SidePanelAdmin ({props}) {
     setModuleResume(value)
   }
 
+  const handleAdminShare = (event, newValue) => {
+     
+    console.log(newValue)
+    setSelectedAdmin(newValue)
+  }
+
+  const handleStopShare= async() =>{
+
+    var rep = await ModuleManager.stopShare({token:token},selecteShare)
+    setShare(rep)
+    setSelectedShare()
+    setRefreshKey(oldKey => oldKey + 1)
+    setOpenSnackbarsShare(true)
+     
+  }
+
+  const handleCloseandShareModule = async() =>{
+
+    var rep = await ModuleManager.share({token:token},moduleSelected,selectedAdmin)
+    setRefreshKey(oldKey => oldKey + 1)
+    setOpenSnackbarsShare(true)
+     
+  }
+
   const handleModuleNameChange = event => {
     const {
       target: { value }
@@ -516,7 +549,7 @@ export default function SidePanelAdmin ({props}) {
 
   const handleEdition  = (e) => {
     setressourceIdEdition(e)
-    console.log("e",ressourceIdEdition)
+    //console.log("e",ressourceIdEdition)
     setTabRessourceValue("2")
     setRefreshKey(oldKey => oldKey + 1)
     
@@ -526,18 +559,23 @@ export default function SidePanelAdmin ({props}) {
   }
 
   const handleSelectedAffectation = async (event, newValue) => {
-    console.log('handle', newValue, event)
+    //console.log('handle', newValue, event)
     setDataSelectedAffectation(newValue)
     setRefreshKey(oldKey => oldKey + 1)
   }
 
   const handleSelectedgroupe = async (event, newValue) => {
-    console.log('handle', newValue, event)
+    //console.log('handle', newValue, event)
     setDataGroupeSelected(newValue)
   }
 
+  const handleSelectedShare= async (event, newValue) => {
+    //console.log('handle', newValue, event)
+      setSelectedShare(newValue)
+  }
+
   const handleSelectedModule = async (event, newValue) => {
-    console.log('handle', newValue, event)
+    //console.log('handle', newValue, event)
     setDataModuleSelected(newValue)
   }
   
@@ -549,7 +587,7 @@ export default function SidePanelAdmin ({props}) {
     }
     else{
       
-      console.log('handle', newValue, event)
+      //console.log('handle', newValue, event)
       setDataFormationSelected(newValue)
       let listGroupe = []
       groupes.forEach(element => {
@@ -561,7 +599,7 @@ export default function SidePanelAdmin ({props}) {
       let response = await getModules(token, newValue)
   
       let listModules = []
-      console.log('MF', formationSelected)
+      //console.log('MF', formationSelected)
       response.modules.forEach(element => {
         if (element.id_formation == newValue.id)
           listModules.push({ label: element.name, id: element.id })
@@ -583,6 +621,7 @@ export default function SidePanelAdmin ({props}) {
     setOpenSnackbarsGroupe(false)
     setOpenSnackbarsFormation(false)
     setOpenSnackbarsModule(false)
+    setOpenSnackbarsShare(false)
   }
 
   useEffect(() => {
@@ -592,12 +631,12 @@ export default function SidePanelAdmin ({props}) {
       response.formations.forEach(element => {
         formationsList.push({ label: element.name, id: element.id })
       })
-      console.log('rep', formationsList)
+      //console.log('rep', formationsList)
       setDataFormation(formationsList)
     
 
       response = await getGroupes()
-      console.log('rep', response.groupes)
+      //console.log('rep', response.groupes)
       setDataGroupe(response.groupes)
 
       if(formationSelected != null){
@@ -612,18 +651,23 @@ export default function SidePanelAdmin ({props}) {
           id_formation: element.id_formation
         })
       })
-      console.log('rep M', modules)
+      //console.log('rep M', modules)
       setdataModules(modules)
     }
 
     response = await getAffectation(token)
-    console.log('affectation',response)
+    //console.log('affectation',response)
     let aff=[]
     response.forEach(element => {
       var item = {data:element, label:"["+element.formation.name+"] "+element.groupe.name+" : "+element.module.name}
       aff.push(item)
     });
     setDataAffectation(aff)
+
+    setAdminUser(await UsersManager.getUsers({token:token},0))
+    setShare(await ModuleManager.getShare({token:token}))
+
+
     }
     getData()
   }, [refreshKey])
@@ -632,6 +676,15 @@ export default function SidePanelAdmin ({props}) {
 
   return (
     <>
+    <Snackbar
+        open={shareModule}
+        autoHideDuration={6000}
+        onClose={handleClose}
+      >
+        <Alert onClose={handleClose} severity='success' sx={{ width: '100%' }}>
+          Module partagé
+        </Alert>
+      </Snackbar>
       <Snackbar
         open={groupeAdded}
         autoHideDuration={6000}
@@ -852,6 +905,7 @@ export default function SidePanelAdmin ({props}) {
                 <Tab label='Nouveau Module' value='1' />
                 <Tab label='Affectation' value='2' />
                 <Tab label='Gestion' value='3' />
+                <Tab label='Partager' value='4' />
               </TabList>
             </Box>
             <TabPanel value='1'>
@@ -1046,6 +1100,74 @@ export default function SidePanelAdmin ({props}) {
               <DialogActions>
                 <Button onClick={handleCloseModalUpdateModule}>Modifier</Button>
               </DialogActions>
+              <DialogActions>
+                <Button onClick={handleCloseModalModule}>Fermer</Button>
+              </DialogActions>
+            </TabPanel>
+            <TabPanel value='4'>
+              <DialogContent>
+                <DialogContentText>
+                  Partager le module:
+                </DialogContentText>
+                <Autocomplete
+                  sx={{ my: 2 }}
+                  fullWidth
+                  id='combo-box-demo'
+                  options={formations}
+                  
+                  onChange={handleSelectedFormation}
+                  variant='outlined'
+                  renderInput={params => (
+                    <TextField {...params} label='Formation' />
+                  )}
+                />
+                <Autocomplete
+                  sx={{ my: 2 }}
+                  fullWidth
+                  disablePortal
+                  id='combo-box-demo'
+                  
+                  options={dataModulesFiltred}
+                  onChange={handleSelectedModule}
+                  variant='outlined'
+                  renderInput={params => (
+                    <TextField {...params} label='Modules' />
+                  )}
+                />
+                <Autocomplete
+                  sx={{ my: 2 }}
+                  fullWidth
+                  id='combo-box-demo'
+                  options={adminUser}
+                  onChange={handleAdminShare}
+                  variant='outlined'
+                  renderInput={params => (
+                    <TextField {...params} label='Utilisateur...' />
+                  )}
+                />
+                <DialogActions>
+                  <Button onClick={handleCloseandShareModule}>Partager</Button>
+                </DialogActions>
+                <DialogContentText>Arreter un partage</DialogContentText>
+                <Autocomplete
+                  sx={{ my: 2 }}
+                  fullWidth
+                  id='combo-box-demo'
+                  options={share}
+                  inputValue={selecteShare}
+                  onChange={handleSelectedShare}
+                  variant='outlined'
+                  renderInput={params => (
+                    <TextField {...params} label='Partage...' />
+                  )}
+                />
+                
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleStopShare}>Arreter</Button>
+                <Button onClick={handleStopShare}>Arreter tous les partages</Button>
+              </DialogActions>
+
               <DialogActions>
                 <Button onClick={handleCloseModalModule}>Fermer</Button>
               </DialogActions>

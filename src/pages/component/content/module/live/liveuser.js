@@ -36,8 +36,8 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 
 const sock = io(ConfigData.SERVER_URL, {
   reconnection: true,
-  reconnectionDelay: 500,
-  reconnectionAttempts: 10,
+  reconnectionDelay: 1000,
+  reconnectionAttempts: 1000,
 });
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -210,8 +210,8 @@ export default function LiveUser({ module, token }) {
       setVisiteurID(id);
       sock.emit("joinpublic", { name: id, publickey: publickey });
       }
-      else
-        sock.emit("joinpublic", { name: visiteurID, publickey: publickey });
+      //else
+       // sock.emit("joinpublic", { name: visiteurID, publickey: publickey });
       
 
       setOpenModalCodeGroupe(false);
@@ -415,26 +415,8 @@ export default function LiveUser({ module, token }) {
 
         <DialogContent dividers>
           <Grid container spacing={2}>
-            <Grid item xs={4}>
-              <Item>
-                <DialogContentText id="alert-dialog-description">
-                  <Typography>Reponse :</Typography>
-                  <GetForm
-                    reponse={reponse}
-                    setReponse={setReponse}
-                    question={question}
-                  />
-                  <GetErreur erreur={erreur} erreurMsg={erreurMsg} />
-
-                  <Box sx={{ m: 2 }}>
-                    <Button variant="outlined" fullWidth onClick={handleSend}>
-                      Envoyer
-                    </Button>
-                  </Box>
-                </DialogContentText>
-              </Item>
-            </Grid>
-            <Grid item xs={8}>
+           
+            <Grid item xs={12} md={8}>
               <Item>
                 <Box sx={{ width: "100%" }}>
                   {question != undefined ? (
@@ -466,6 +448,25 @@ export default function LiveUser({ module, token }) {
                     </>
                   ))}
                 </Box>
+              </Item>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Item>
+                <DialogContentText id="alert-dialog-description">
+                  <Typography>Reponse :</Typography>
+                  <GetForm
+                    reponse={reponse}
+                    setReponse={setReponse}
+                    question={question}
+                  />
+                  <GetErreur erreur={erreur} erreurMsg={erreurMsg} />
+
+                  <Box sx={{ m: 2 }}>
+                    <Button variant="outlined" fullWidth onClick={handleSend}>
+                      Envoyer
+                    </Button>
+                  </Box>
+                </DialogContentText>
               </Item>
             </Grid>
           </Grid>

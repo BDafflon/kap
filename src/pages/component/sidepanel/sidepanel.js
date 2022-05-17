@@ -23,6 +23,7 @@ import DraftsIcon from '@mui/icons-material/Drafts';
 import ConfigData from '../../../utils/configuration.json'
 import DescriptionIcon from '@mui/icons-material/Description';
 import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
+import CoPresentIcon from '@mui/icons-material/CoPresent';
 
 const drawerWidth = 240
 
@@ -45,7 +46,7 @@ async function getModules (token) {
   if (!response.ok) {
     localStorage.removeItem('token')
     window.location.reload(false);
-    console.log(response)
+    //console.log(response)
   }
   if (response.status == 401) {
     localStorage.removeItem('token')
@@ -54,7 +55,7 @@ async function getModules (token) {
   const result = await response.json()
   var data=[]
   result.modules.forEach(element => {
-    console.log("element",element)
+    //console.log("element",element)
     if (element.id_owner == token.id){
     var item = {icon:<ContentPasteSearchIcon/>, label:element.name, open:true, id_formation:element.id_formation, id_module:element.id}
 
@@ -63,6 +64,45 @@ async function getModules (token) {
     }
     data.push(item)
   });
+
+
+  const requestOptions2 = {
+    method: 'GET',
+    mode: 'cors',
+    headers: {
+      'x-access-token': token.token,
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    }
+  }
+  const response2 = await fetch(
+    ConfigData.SERVER_URL + '/sharewithme',
+    requestOptions2
+  )
+  if (!response.ok) {
+    localStorage.removeItem('token')
+    window.location.reload(false);
+    //console.log(response)
+  }
+  if (response.status == 401) {
+    localStorage.removeItem('token')
+    window.location.reload(false);
+  }
+  const result2 = await response2.json()
+  result2.modules.forEach(element => {
+    //console.log("element",element)
+    if (element.id_owner == token.id){
+    var item = {icon:<ContentPasteSearchIcon/>, label:element.name, open:true, id_formation:element.id_formation, id_module:element.id}
+
+    }else{
+      if(token.rank==0)
+        var item = {icon:<CoPresentIcon/>, label:element.name, open:true, id_formation:element.id_formation, id_module:element.id}
+      else
+        var item = {icon:<DescriptionIcon/>, label:element.name, open:true, id_formation:element.id_formation, id_module:element.id, intro:element.intro }
+    }
+    data.push(item)
+  });
+
   return data
 }
 

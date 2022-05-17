@@ -28,7 +28,7 @@ import Rating from '@mui/material/Rating';
 export default function QuestionQCM (props) {
     const [question , setQuestion] = React.useState(props.props.typeQuestion) 
     const [checked, setChecked] = React.useState(question.Requis);
-    console.log("qest",question.Requis)
+    //console.log("qest",question.Requis)
 
     const accordionProps = {
          
@@ -44,7 +44,7 @@ export default function QuestionQCM (props) {
    
 
       useEffect(() => {
-          console.log("useEffect",question)
+          //console.log("useEffect",question)
             setChecked(question.Requis)
       }, [props])
     

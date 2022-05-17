@@ -22,7 +22,7 @@ async function loginUser(credentials) {
     })
       .then(data => data.json())
       .catch(error => {
-        console.log("error")
+        //console.log("error")
          
 
       })
@@ -65,9 +65,9 @@ export default function Login({setToken}){
               'Password is required')
         }),
         onSubmit:async  (values) => {
-          console.log(values)
+          //console.log(values)
           const token = await loginUser(values);
-           console.log(token)
+           //console.log(token)
           if(token != undefined){
             setToken(token);
           }

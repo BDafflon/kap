@@ -43,9 +43,9 @@ async function upload(file, token, handle, name) {
     ConfigData.SERVER_URL + "/uploader",
     requestOptions
   );
-  console.log(response);
+  //console.log(response);
   if (!response.ok) {
-    console.log(response);
+    //console.log(response);
   }
   if (response.status == 401) {
     localStorage.removeItem("token");

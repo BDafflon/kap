@@ -69,11 +69,11 @@ export default function Registration({setToken}){
     useEffect(() => {
         const getData = async () => {
             let response = await getFormation()
-            console.log("rep",response)
+            //console.log("rep",response)
             setData(response["formations"])
 
             response = await getGroupes()
-            console.log("rep",response)
+            //console.log("rep",response)
             setGroupes(response["groupes"])
         }
         getData()
@@ -86,7 +86,7 @@ export default function Registration({setToken}){
     const {
       target: { value },
     } = event;
-    console.log('se',value)
+    //console.log('se',value)
 
     let gr = filtreGroupe(groupes,value.id)
     setGroupesFiltre(gr)
@@ -102,7 +102,7 @@ export default function Registration({setToken}){
     const {
       target: { value },
     } = event;
-    console.log('se',value)
+    //console.log('se',value)
     setGroupeSelected(value)
     
  
@@ -146,7 +146,7 @@ export default function Registration({setToken}){
         onSubmit:async  (values) => {
             values.formation = formationSelected.id
             values.groupe = groupeSelected.id
-            console.log("val",values)
+            //console.log("val",values)
 
             await registerUser(values);
               

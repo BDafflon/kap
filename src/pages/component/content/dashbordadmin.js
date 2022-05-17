@@ -173,6 +173,13 @@ export default function DashboardAdmin({ token }) {
     load();
   }, [updater]);
 
+  const handleAdmin =  (p) =>  async(e) =>{
+    console.log(p)
+    var r = UserManager.switchRank(token,p)
+    if (r!= undefined)
+      setUpdater(updater+1)
+  }
+
   if (modules.length == 0) return <></>;
   if (token.rank != 0) return <></>;
   return (
@@ -246,8 +253,10 @@ export default function DashboardAdmin({ token }) {
               {usersSubList.map((user, i) => (
                 <ListItem>
                   <ListItemIcon>
-                    <FolderIcon />
-                    <AdminPanelSettingsIcon color={user.rank==0?"success":"disabled"} />
+                    
+                    <IconButton onClick={handleAdmin(user)}>
+                      <AdminPanelSettingsIcon   color={user.rank==0?"success":"disabled"} />
+                    </IconButton>
                   </ListItemIcon>
                   <ListItemText  primary={user.label} />
                   

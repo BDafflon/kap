@@ -26,7 +26,7 @@ import Rating from '@mui/material/Rating';
 
 
 export default function QuestionRapide (props) {
-    console.log("QuestionRapide",props)
+    //console.log("QuestionRapide",props)
     const [question , setQuestion] = React.useState(props.props.typeQuestion) 
     const [checked, setChecked] = React.useState(props.props.typeQuestion.Requis);
   
@@ -43,7 +43,7 @@ export default function QuestionRapide (props) {
       };
 
       const handleCheck = (val) => {
-        console.log(val)
+        //console.log(val)
         setChecked(val)
     }
       
@@ -52,7 +52,7 @@ export default function QuestionRapide (props) {
    
 
       useEffect(() => {
-          console.log("useEffect QR",props)
+          //console.log("useEffect QR",props)
             setQuestion(props.props.typeQuestion)
              
       }, [props.props.updatekey])

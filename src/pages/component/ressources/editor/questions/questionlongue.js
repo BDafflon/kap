@@ -100,7 +100,7 @@ export default function QuestionLongue (props) {
           if(e.target.id=="reponse")
           question.reponse=question.reponse+"\n"+f
           setQuestion(question)
-          console.log("handleDrop ",e.target.id)
+          //console.log("handleDrop ",e.target.id)
           props.props.handle(props.props.index,question,"upload","question")(null)
           
           
