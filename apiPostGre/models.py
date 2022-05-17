@@ -5,7 +5,7 @@ db = SQLAlchemy()
 
 class RessourceSetting(db.Model):
     __tablename__ ='ressourcesetting'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_groupe = db.Column(db.Integer)
     id_ressource= db.Column(db.Integer)
     id_type_ressource = db.Column(db.Integer)
@@ -24,7 +24,7 @@ class RessourceSetting(db.Model):
 
 class Absence(db.Model):
     __tablename__ ='absence'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_module = db.Column(db.Integer)
     dateO = db.Column(db.Integer)
     id_user_etu=db.Column(db.Integer)
@@ -47,7 +47,7 @@ class Absence(db.Model):
 
 class RessourceLive(db.Model):
     __tablename__ = 'ressourcelive'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_module = db.Column(db.Integer)
     dateO = db.Column(db.Integer)
     dateF = db.Column(db.Integer)
@@ -70,7 +70,7 @@ class RessourceLive(db.Model):
 
 class RessourceLiveDetail(db.Model):
     __tablename__ = 'ressourceliveDetail'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_live=db.Column(db.Integer)
     id_module = db.Column(db.Integer)
     content = db.Column(db.String(255))
@@ -99,7 +99,7 @@ class RessourceLiveDetail(db.Model):
 
 class RessourceLiveParticipation(db.Model):
     __tablename__ = 'ressourceliveParticipation'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_module = db.Column(db.Integer)
     id_user = db.Column(db.Integer)
     id_RessourceLiveDetail=db.Column(db.Integer)
@@ -120,7 +120,7 @@ class RessourceLiveParticipation(db.Model):
 
 class RessourceStat(db.Model):
     __tablename__ = 'ressourcestat'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_user = db.Column(db.Integer)
     id_ressource = db.Column(db.Integer)
     type_ressource = db.Column(db.Integer)
@@ -140,7 +140,7 @@ class RessourceStat(db.Model):
 
 class RessourceText(db.Model):
     __tablename__ = 'ressourcetext'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_owner = db.Column(db.Integer)
     id_module = db.Column(db.Integer)
     groupes = db.Column(db.String(255))
@@ -167,7 +167,7 @@ class RessourceText(db.Model):
 
 class RessourceQestions(db.Model):
     __tablename__ = 'ressourceqestions'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_module = db.Column(db.Integer)
     titre = db.Column(db.String(255))
     type = db.Column(db.String(255))
@@ -199,7 +199,7 @@ class RessourceQestions(db.Model):
 
 class Question(db.Model):
     __tablename__ = 'question'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_ressourceqestions = db.Column(db.Integer)
     question = db.Column(db.Text())
     type = db.Column(db.Integer)
@@ -232,7 +232,7 @@ class Question(db.Model):
 
 class Evaluation(db.Model):
     __tablename__ = 'evaluation'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_ressourceqestions = db.Column(db.Integer)
     id_user = db.Column(db.Integer)
     id_module = db.Column(db.Integer)
@@ -255,7 +255,7 @@ class Evaluation(db.Model):
 
 class ReponseEvaluation(db.Model):
     __tablename__ = 'reponseevaluation'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_user = db.Column(db.Integer)
     id_question = db.Column(db.Integer)
     id_eval= db.Column(db.Integer)
@@ -280,7 +280,7 @@ class ReponseEvaluation(db.Model):
 
 class Media(db.Model):
     __tablename__ = 'media'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     type=db.Column(db.String(50))
     name=db.Column(db.String(50))
     url = db.Column(db.String(255))
@@ -297,7 +297,7 @@ class Media(db.Model):
 
 class Formation(db.Model):
     __tablename__ = 'formation'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     name = db.Column(db.String(50))
 
     def serialize(self):
@@ -309,7 +309,7 @@ class Formation(db.Model):
 
 class Affectation(db.Model):
     __tablename__ = 'affectation'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     id_formation = db.Column(db.Integer)
     id_groupe = db.Column(db.Integer)
     id_module = db.Column(db.Integer)
@@ -325,7 +325,7 @@ class Affectation(db.Model):
 
 class Groupe(db.Model):
     __tablename__ = 'groupe'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     name = db.Column(db.String(50))
     subgroupe = db.Column(db.String(50))
     id_formation = db.Column(db.Integer)
@@ -340,7 +340,7 @@ class Groupe(db.Model):
 
 class Module(db.Model):
     __tablename__ = 'module'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     name = db.Column(db.String(50))
     id_formation = db.Column(db.Integer)
     id_owner = db.Column(db.Integer)
@@ -358,7 +358,7 @@ class Module(db.Model):
 
 class User(db.Model):
     __tablename__ = 'user'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer,primary_key=True, autoincrement=True)
     public_id = db.Column(db.String(50), unique=True)
     firstname = db.Column(db.String(50))
     lastname = db.Column(db.String(50))
