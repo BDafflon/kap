@@ -1480,11 +1480,11 @@ def user_registration():
     rank = 1
 
     if  lastname is None or firstname is None or password is None or mail is None:
-        os.abort(make_response(jsonify(errors='missing parameters'), 400))
+        return make_response(jsonify(errors='missing parameters'), 400)
 
     if User.query.filter_by(mail=mail).first() is not None:
         print("existing")
-        os.abort(make_response(jsonify(errors='User already existing'), 400))
+        return make_response(jsonify(errors='User already existing'), 400)
 
     u = User(mail=mail)
     u.password = password
@@ -1604,4 +1604,4 @@ if __name__ == '__main__':
     #powershell  : $env:FLASK_APP = api.py
     #CMD set FLASK_APP=api.py
     #error : flask db revision --rev-id c555609ffc5c
-    socketio.run(app, debug=True, host='0.0.0.0',port=8126)
+    socketio.run(app, debug=True)
