@@ -356,6 +356,9 @@ const Alert = React.forwardRef(function Alert (props, ref) {
 })
 
 export default function SidePanelAdmin ({props}) {
+
+  
+  
   //console.log("props SAdmin", props)
   const [openConfig, setOpenConfig] = React.useState(true)
   const token = props.token;
@@ -376,7 +379,7 @@ export default function SidePanelAdmin ({props}) {
   const [dataModules, setdataModules] = useState([])
   const [dataModulesFiltred, setdataModulesFiltred] = useState([])
   const [formationSelected, setDataFormationSelected] = useState(null)
-  const [moduleSelected, setDataModuleSelected] = useState([])
+  const [moduleSelected, setDataModuleSelected] = useState()
   const [groupeSelected, setDataGroupeSelected] = useState(null)
   const [moduleAdded, setOpenSnackbarsModule] = React.useState(false)
   const [shareModule, setOpenSnackbarsShare] = React.useState(false)
@@ -606,7 +609,7 @@ export default function SidePanelAdmin ({props}) {
       })
   
       setdataModulesFiltred(listModules)
-      setDataModuleSelected([])
+      setDataModuleSelected(undefined)
     }
     setRefreshKey(oldKey => oldKey + 1)
 
@@ -669,7 +672,8 @@ export default function SidePanelAdmin ({props}) {
 
 
     }
-    getData()
+    if (props.rank == 0)
+      getData()
   }, [refreshKey])
 
   if (props.rank != 0) return <></>

@@ -84,15 +84,15 @@ async function getUsers(token) {
 
   //console.log("data user", data);
 
-  data.users.forEach((element) => {
+  data.forEach((element) => {
     element.label = element.firstname + " - " + element.lastname;
     element.absence=0
   });
 
-  data.users.sort((a, b) => (a.label > b.label ? 1 : b.name > a.name ? -1 : 0));
+  data.sort((a, b) => (a.label > b.label ? 1 : b.name > a.name ? -1 : 0));
   //console.log("data ", data.users);
-  data.users.unshift({ label: "Tous", id: -1 });
-  return data.users;
+  data.unshift({ label: "Tous", id: -1 });
+  return data;
 }
 
 

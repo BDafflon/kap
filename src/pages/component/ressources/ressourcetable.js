@@ -128,7 +128,7 @@ export default function RessourcesTable ({ token, groupes, handleEdition, format
   useEffect(() => {
 
     const fetchData = async () => {
-   
+      console.log("ressource tab",module)
       const result1 = await RessourcesManager.getMyRessource(token)
       const result2 = await RessourcesManager.getRessourceShare(token)
       const result = result1.concat(result2);
@@ -161,6 +161,7 @@ export default function RessourcesTable ({ token, groupes, handleEdition, format
           element.setting
         )
 
+        
         if(module != undefined){
           if(module.id==element.id_module){
             data.push(item)

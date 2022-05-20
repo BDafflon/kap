@@ -170,7 +170,7 @@ export default function MyAccount({ token, dashboardType }) {
   const [code, setCode] = React.useState("");
   const [user, setUser] = React.useState();
   const [updater, setUpdater] = React.useState(0);
-  const navigate = useNavigate();
+   
 
   useEffect(() => {
     const getData = async () => {
@@ -217,165 +217,86 @@ export default function MyAccount({ token, dashboardType }) {
     setOpenGroupModal(true);
   };
 
-  const formik = useFormik({
-    initialValues: {
-      firstname: "",
-      lastname: "",
-      email: "",
-      password: "",
-      formation: null,
-      groupe: null,
-    },
-    validationSchema: Yup.object({
-      email: Yup.string()
-        .email("Must be a valid email")
-        .max(255)
-        .required("Email is required"),
-      password: Yup.string().max(255).required("Password is required"),
-      password2: Yup.string().max(255).required("Password is required"),
-      firstname: Yup.string().max(255).required("firstname is required"),
-      lastname: Yup.string().max(255).required("lastname is required"),
-    }),
-    onSubmit: async (values) => {
-      values.formation = formationSelected.id;
-      values.groupe = groupeSelected.id;
-      //console.log("val", values);
+  const handleChangeAccount = (p) => (e) =>{
+    console.log("handleChangeAccount",user,p,e)
+    var u = user
+    u[p]=e.target.value
+    setUser({...u})
+    
+  }
+  if(user==undefined) return <></>
 
-      await registerUser(values);
-
-      navigate("/das", { replace: true });
-    },
-  });
+  
   return (
     <>
       <h1>Mon compte</h1>
       <Grid container spacing={3}>
         <Grid item xs={12} sm={12} md={6} lg={6}>
-          <Box>
-            <form onSubmit={formik.handleSubmit} sx={{ p: 2.25, boxShadow: 1 }}>
-              <Box sx={{ my: 3 }}>
-                <Typography color="textPrimary" variant="h4">
-                  Mes informations
-                </Typography>
-              </Box>
-              <Box sx={{ p: 2.25, boxShadow: 1 }}>
-                <Box sx={{ my: 2 }}>
-                  <div>
-                    <TextField
-                      error={Boolean(
-                        formik.touched.firstname && formik.errors.firstname
-                      )}
-                      helperText={
-                        formik.touched.firstname && formik.errors.firstname
-                      }
-                      id="outlined-error"
-                      label="Prenom"
-                      onBlur={formik.handleBlur}
-                      onChange={formik.handleChange}
-                      defaultValue=""
-                      name="firstname"
-                      type="text"
-                      style={{ width: "48%" }}
-                      variant="outlined"
-                    />
-                    <TextField
-                      error={Boolean(
-                        formik.touched.lastname && formik.errors.lastname
-                      )}
-                      id="outlined-error-helper-text"
-                      label="Nom"
-                      type="text"
-                      name="lastname"
-                      style={{ width: "48%", float: "right" }}
-                      onBlur={formik.handleBlur}
-                      onChange={formik.handleChange}
-                      defaultValue=""
-                      variant="outlined"
-                    />
-                  </div>
-                </Box>
-                <Box sx={{ my: 2 }}>
-                  <div>
-                    <TextField
-                      error={Boolean(
-                        formik.touched.email && formik.errors.email
-                      )}
-                      fullWidth
-                      helperText={formik.touched.email && formik.errors.email}
-                      label="Email Address"
-                      margin="normal"
-                      name="email"
-                      onBlur={formik.handleBlur}
-                      onChange={formik.handleChange}
-                      type="email"
-                      value={formik.values.email}
-                      variant="outlined"
-                    />
-                  </div>
-                </Box>
-                <Box sx={{ my: 2 }}>
-                  <div>
-                    <TextField
-                      error={Boolean(
-                        formik.touched.password && formik.errors.password
-                      )}
-                      fullWidth
-                      helperText={
-                        formik.touched.password && formik.errors.password
-                      }
-                      label="Password"
-                      margin="normal"
-                      name="password"
-                      onBlur={formik.handleBlur}
-                      onChange={formik.handleChange}
-                      type="password"
-                      value={formik.values.password}
-                      variant="outlined"
-                    />
-                  </div>
-                  <div>
-                    <TextField
-                      error={Boolean(
-                        formik.touched.password2 && formik.errors.password2
-                      )}
-                      fullWidth
-                      helperText={
-                        formik.touched.password2 && formik.errors.password2
-                      }
-                      label="Password Confirmation"
-                      margin="normal"
-                      name="password2"
-                      onBlur={formik.handleBlur}
-                      onChange={formik.handleChange}
-                      type="password"
-                      value={formik.values.password2}
-                      variant="outlined"
-                    />
-                  </div>
-                </Box>
-                <Box sx={{ my: 2 }}>
-                  <div></div>
-                </Box>
-                <Box sx={{ my: 2 }}>
-                  <div>
-                    <Button
-                      disabled
-                      color="primary"
-                      fullWidth
-                      size="large"
-                      type="submit"
-                      variant="contained"
-                    >
-                      Mise a jour
-                    </Button>
-                  </div>
-                </Box>
-              </Box>
-            </form>
+        <Box >
+            <Typography color="textPrimary" variant="h4">
+              Mes informations
+            </Typography>
           </Box>
+          <Grid container spacing={2}>
+          <Grid item xs={12} sm={12} md={6} lg={6}>
+          <TextField
+
+fullWidth 
+              id="outlined-name"
+              label="Prenom"
+              value={user.firstname}
+              onChange={handleChangeAccount("firstname")}
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} md={6} lg={6}>
+          <TextField
+          fullWidth
+              id="outlined-name"
+              label="Nom"
+              value={user.lastname}
+              onChange={handleChangeAccount("lastname")}
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} md={12} lg={12}>
+          <TextField
+          fullWidth
+              id="outlined-name"
+              label="Email"
+              value={user.mail}
+              onChange={handleChangeAccount("mail")}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={12} md={6} lg={6}>
+          <TextField
+
+fullWidth 
+type="password"
+              id="outlined-name"
+              label="Mots de passe"
+              value={user.password}
+              onChange={handleChangeAccount("password")}
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} md={6} lg={6}>
+          <TextField
+          fullWidth
+          type="password"
+              id="outlined-name"
+              label="Confirmation"
+              value={user.password2}
+              onChange={handleChangeAccount("password2")}
+            />
+          </Grid>
+          <Grid item xs={12} sm={12} md={12} lg={12}>
+          <Button variant="contained">Mise a jour</Button>
+          </Grid>
+
+          </Grid>
+          
         </Grid>
         <Grid item xs={12} sm={12} md={6} lg={6}>
-          <Box sx={{ my: 3 }}>
+          <Box >
             <Typography color="textPrimary" variant="h4">
               Mes Groupes
               <IconButton component="span" onClick={handleAddGroupe}>

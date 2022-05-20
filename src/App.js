@@ -7,7 +7,7 @@ import Preferences from './pages/Preferences';
 import useToken from './utils/useToken';
 import Registration from './pages/registration';
 import LiveUser from './pages/component/content/module/live/liveuser';
- 
+import Python from "./test/python";
 
 function App() {
   const { token, setToken } = useToken();
@@ -22,6 +22,7 @@ function App() {
         <Route path='/live/:publickey' element={<LiveUser />} />
        <Route path='/login' element={<Login setToken={setToken}/>} />
        <Route path='/registration' element={<Registration/>} />
+       <Route path='/python' element={<Python/>} />
        <Route path="*" element={<Login setToken={setToken}/>} />
      </Routes>
     </BrowserRouter>

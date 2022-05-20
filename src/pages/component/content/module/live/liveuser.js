@@ -260,7 +260,7 @@ export default function LiveUser({ module, token }) {
     }
     else{
       if (e.id_user == token.id) {
-        await setReponseListUser((prevMessages) => [e, ...prevMessages]);
+        await setReponseListUser(await LiveManager.getResponse(token.id,e.id_live,e.id_RessourceLiveDetail));
         
       }
     }

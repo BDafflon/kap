@@ -28,6 +28,7 @@ import { getOptionGroupUnstyledUtilityClass } from "@mui/base";
 import FolderIcon from "@mui/icons-material/Folder";
 import ListItem from "@mui/material/ListItem";
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 function getDate(d) {
   if (d == 0) return <span>&#8734;</span>;
@@ -101,6 +102,7 @@ async function getModules(token) {
     }
     data.push(item);
   });
+  data.unshift({ label: "Tous", id: -1 });
   return data;
 }
 
@@ -141,6 +143,29 @@ async function getGroupes(token) {
   return data.groupes;
 }
 
+async function getFormations(token) {
+  var data = await fetch(ConfigData.SERVER_URL + "/formations", {
+    method: "GET",
+    mode: "cors",
+    headers: {
+      "x-access-token": token.token,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  }).then((response) => response.json());
+
+  data.formations.forEach((element) => {
+    element.label =  element.name;
+  });
+
+  data.formations.sort((a, b) =>
+    a.label > b.label ? 1 : b.name > a.name ? -1 : 0
+  );
+  //console.log("data ", data.groupes);
+  data.formations.unshift({ label: "Toutes", id: -1 });
+  return data.formations;
+}
+
 async function getUser(token) {
   var data = await  UserManager.getAllUsers(token)
   //console.log("data user", data);
@@ -156,16 +181,19 @@ async function getUser(token) {
 
 export default function DashboardAdmin({ token }) {
   const [modules, setModules] = React.useState([]);
+  const [formations, setFormations ] = React.useState([]);
   const [groupes, setGroupe] = React.useState([]);
   const [updater, setUpdater] = React.useState(0);
   const [valueGroupe, setValueGroup] = React.useState();
   const [users, setUser] = React.useState([]);
   const [usersSubList, setUserSubList] = React.useState([]);
+  const [modulesSubList, setModulesSubList] = React.useState([]);
 
   useEffect(() => {
     async function load() {
       setModules(await getModules(token));
       setGroupe(await getGroupes(token));
+      setFormations(await getFormations(token));
       var x = await getUser(token);
       setUser(x);
       setUserSubList(x);
@@ -179,6 +207,12 @@ export default function DashboardAdmin({ token }) {
     if (r!= undefined)
       setUpdater(updater+1)
   }
+  const handleTrashUser =(p)=>async(e)=>{
+    console.log(p)
+    var r = UserManager.trashUser(token,p)
+    if (r!= undefined)
+      setUpdater(updater+1)
+  }
 
   if (modules.length == 0) return <></>;
   if (token.rank != 0) return <></>;
@@ -188,7 +222,7 @@ export default function DashboardAdmin({ token }) {
         <Grid item xs={12} sm={12} md={6} lg={4}>
           <Stack spacing={2}>
             <Typography>
-              Etuidants{" "}
+              Etudiants{" "}
             </Typography>
 
             <Autocomplete
@@ -223,19 +257,16 @@ export default function DashboardAdmin({ token }) {
             <Autocomplete
               fullWidth
               onChange={(event, newInputValue) => {
-                if (newInputValue == null) newInputValue = groupes[0];
-                setValueGroup(newInputValue);
-                if (newInputValue.id == -1) {
+                
+                if (newInputValue == null) {
                   setUserSubList(users);
                   return;
                 }
                 var data = [];
-                users.forEach((element) => {
-                  if (element.groupe != null && element.groupe != undefined) {
+                usersSubList.forEach((element) => {
+                  if (element.label != null && element.label != undefined) {
                     if (
-                      element.groupe
-                        .split(";")
-                        .includes(newInputValue.id.toString())
+                      element.label.includes(newInputValue.label)
                     )
                       data.push(element);
                   }
@@ -245,7 +276,7 @@ export default function DashboardAdmin({ token }) {
               }}
               disablePortal
               id="combo-box-demo"
-              options={groupes}
+              options={usersSubList}
               sx={{ width: 300 }}
               renderInput={(params) => <TextField {...params} label="Nom/Prenom" />}
             />
@@ -256,6 +287,13 @@ export default function DashboardAdmin({ token }) {
                     
                     <IconButton onClick={handleAdmin(user)}>
                       <AdminPanelSettingsIcon   color={user.rank==0?"success":"disabled"} />
+                    </IconButton>
+                     
+                  </ListItemIcon>
+                  <ListItemIcon>
+                     
+                    <IconButton onClick={handleTrashUser(user)}>
+                      <DeleteForeverIcon />
                     </IconButton>
                   </ListItemIcon>
                   <ListItemText  primary={user.label} />
@@ -272,41 +310,39 @@ export default function DashboardAdmin({ token }) {
             <Autocomplete
               fullWidth
               onChange={(event, newInputValue) => {
-                if (newInputValue == null) newInputValue = groupes[0];
-                setValueGroup(newInputValue);
+                console.log(modules,newInputValue)
+                if (newInputValue == null) newInputValue = modules[0];
+                 
                 if (newInputValue.id == -1) {
-                  setUserSubList(users);
+                  setModulesSubList(modules);
                   return;
                 }
                 var data = [];
-                users.forEach((element) => {
-                  if (element.groupe != null && element.groupe != undefined) {
-                    if (
-                      element.groupe
-                        .split(";")
-                        .includes(newInputValue.id.toString())
-                    )
+                modules.forEach((element) => {
+                  if (element.id_formation != null && element.id_formation != undefined) {
+                     
                       data.push(element);
                   }
                 });
-                setUserSubList(data);
+                setModulesSubList(data);
                 //console.log("setValueGroup", newInputValue.id, data);
               }}
               disablePortal
               id="combo-box-demo"
-              options={groupes}
+              options={formations}
               sx={{ width: 300 }}
+              
               renderInput={(params) => (
                 <TextField {...params} label="Formations" />
               )}
             />
             <List dense>
-              {usersSubList.map((user, i) => (
+              {modulesSubList.map((module, i) => (
                 <ListItem>
                   <ListItemIcon>
                     <FolderIcon />
                   </ListItemIcon>
-                  <ListItemText primary={user.label} />
+                  <ListItemText primary={module.label} />
                 </ListItem>
               ))}
             </List>

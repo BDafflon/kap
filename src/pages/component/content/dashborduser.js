@@ -18,6 +18,7 @@ import CardActivity from "./module/cardactivity";
 import Ranking from "./module/ranking";
 import HomeWorkIcon from "@mui/icons-material/HomeWork";
 import ConfigData from "../../../utils/configuration.json";
+import * as ModuleUtile from "../../../utils/moduleutile";
 import ListItemIcon from "@mui/material/ListItemIcon";
 
 function getDate(d) {
@@ -259,15 +260,7 @@ export default function DashboardUser({ token }) {
                             <Box>
                               <ListItemButton
                                 onClick={handleRessource(devoir)}
-                                disabled={
-                                  !(
-                                    (devoir.dateO <
-                                      new Date().getTime() / 1000 &&
-                                      devoir.dateF >
-                                        new Date().getTime() / 1000) ||
-                                    devoir.dateO == 0
-                                  )
-                                }
+                                disabled={!ModuleUtile.getOpen(devoir)}
                                 alignItems="flex-start"
                               >
                                 <ListItemIcon>
@@ -321,7 +314,7 @@ export default function DashboardUser({ token }) {
                           <Box>
                             <ListItemButton
                               onClick={handleRessource(devoir.ressource)}
-                              disabled={!getOpen(devoir.ressource)}
+                              disabled={!ModuleUtile.getOpen(devoir)}
                               alignItems="flex-start"
                             >
                               <ListItemIcon>
