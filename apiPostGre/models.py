@@ -376,6 +376,7 @@ class User(db.Model):
             'mail':self.mail,
             'formation':self.formation,
             'groupe':self.groupe,
-            'rank':self.rank
+            'rank':self.rank,
+            'password':"",
         }
 

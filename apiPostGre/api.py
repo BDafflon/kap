@@ -24,6 +24,10 @@ from models import db, User, Formation, Affectation, Groupe, RessourceStat, Ress
     RessourceLiveParticipation, RessourceSetting
 from engineio.payload import Payload
 
+
+
+from RestrictedPython import safe_builtins, compile_restricted, PrintCollector
+
 Payload.max_decode_packets = 5000
 
 app = Flask(__name__)
@@ -54,12 +58,14 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
+        print("Valide Token")
 
         if 'x-access-token' in request.headers:
             token = request.headers['x-access-token']
 
-        print(token)
+        print("token ",token)
         if not token:
+            print('Token is missing! ',request.headers)
             return jsonify({'message' : 'Token is missing!'}), 401
 
         try:
@@ -70,6 +76,8 @@ def token_required(f):
             print(exc)
             return jsonify({'message' : 'Token is invalid!'}), 401
 
+        if current_user is None:
+            return jsonify({'message': 'User is invalid!'}), 401
         return f(current_user, *args, **kwargs)
 
     return decorated
@@ -93,18 +101,24 @@ def on_join(data):
         db.session.commit()
         liveUser[current_user.id]=LiveData()
         join_room(liveUser[current_user.id].roomProf)
-        print("j",live)
+        print("j",live,liveUser)
 
     if current_user.rank != 0:
-        if data["room"] not in liveUser.keys():
+        live = RessourceLive.query.filter_by(room=data["room"]).first()
+        print("live ? ",live.serialize(),liveUser)
+        if live is None:
+            print("live is None")
             return
-        if dataId not in  liveUser[data["room"]]:
-            live = RessourceLive.query.filter_by(room=data["room"]).first()
-            if live is not None:
-                if current_user.id not in liveUser[live.id_owner].listEtu:
-                    liveUser[live.id_owner].listEtu.append(data["name"])
-                    join_room(data["name"])
-                    emit('addClient', {'name': current_user.firstname+" "+current_user.lastname,'id':dataId['id']}, broadcast=True, room=liveUser[live.id_owner].roomProf)
+        if live.id_owner not in liveUser.keys():
+            print("live owner error",liveUser)
+            return
+        if current_user.id not in liveUser[live.id_owner].listEtu:
+            liveUser[live.id_owner].listEtu.append(current_user.id)
+            print("emit ", current_user.firstname + " " + current_user.lastname)
+            emit('addClient', {'name': current_user.firstname + " " + current_user.lastname, 'id': dataId['id']},
+                 broadcast=True, room=liveUser[live.id_owner].roomProf)
+
+        join_room(current_user.id)
 
 
 
@@ -246,7 +260,11 @@ def login():
         return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
 
     if check_password_hash(user.password, auth.password):
-        token = jwt.encode({'id' : user.id, 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=60)}, app.config['SECRET_KEY'],algorithm="HS256")
+        if user.rank==0:
+            elapseTime=3000
+        else:
+            elapseTime = 250
+        token = jwt.encode({'id' : user.id, 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=elapseTime)}, app.config['SECRET_KEY'],algorithm="HS256")
 
         print("log",token,user.rank)
         try:
@@ -257,7 +275,28 @@ def login():
 
     return make_response('Could not verify', 401, {'WWW-Authenticate' : 'Basic realm="Login required!"'})
 
+#----------------------------------------- CODE -------------------------
+@app.route('/runcode', methods=['POST'])
+def run_code():
+    reponses = request.json.get("code")
+    if reponses=="":
+        return jsonify({"reponse":"info", "output": ""})
+    print("runcode")
+    try:
+        _print_ = PrintCollector
+        source_code = reponses
 
+        loc = {'_print_': PrintCollector, '_getattr_': getattr,"__builtins__": safe_builtins}
+        compiled_code = compile_restricted(source_code, '<string>', 'exec')
+
+        rep = exec(compiled_code, loc)
+        rep,r=x = loc['_print'](),'info'
+
+    except Exception as err:
+        rep,r = err.args[0],"error"
+
+    print(rep)
+    return jsonify({"reponse":r,"output":rep})
 #----------------------------------------- FORMATION -------------------------
 @app.route('/formations', methods=['GET'])
 def get_all_formation():
@@ -1443,7 +1482,7 @@ def modules_affectation(current_user):
 @token_required
 def update_rank(current_user,id):
     if current_user.rank!=0:
-        return jsonify({'message' : 'Cannot perform that function!'})
+        return jsonify({'erreur' : 'Cannot perform that function!'})
     if id == current_user.id:
         return jsonify({'erreur' : 'Cannot perform that function!'})
     user = User.query.filter_by(id=id).first()
@@ -1452,6 +1491,16 @@ def update_rank(current_user,id):
         db.session.commit()
     return jsonify(user.serialize())
 
+@app.route('/user/trash/<int:id>', methods=['GET'])
+@token_required
+def trash_user(current_user,id):
+    if current_user.rank!=0:
+        return jsonify({'erreur' : 'Cannot perform that function!'})
+    if id == current_user.id:
+        return jsonify({'erreur' : 'Cannot perform that function!'})
+    User.query.filter_by(id=id).delete()
+    db.session.commit()
+    return jsonify({})
 
 @app.route('/user', methods=['GET'])
 @token_required
@@ -1565,7 +1614,7 @@ def upload_file(current_user):
 def get_all_users(current_user,rank):
 
     if current_user.rank!=0:
-        return jsonify({'message' : 'Cannot perform that function!'})
+        return jsonify({'message' : 'Cannot perform that function!',"users":[]})
 
     if rank is not None:
         users = User.query.filter_by(rank=rank).all()
