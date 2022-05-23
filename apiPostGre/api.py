@@ -290,7 +290,10 @@ def run_code():
         compiled_code = compile_restricted(source_code, '<string>', 'exec')
 
         rep = exec(compiled_code, loc)
-        rep,r=x = loc['_print'](),'info'
+        try:
+            rep,r = loc['_print'](),'info'
+        except:
+            rep, r = None, 'info'
 
     except Exception as err:
         rep,r = err.args[0],"error"
@@ -1653,4 +1656,4 @@ if __name__ == '__main__':
     #powershell  : $env:FLASK_APP = api.py
     #CMD set FLASK_APP=api.py
     #error : flask db revision --rev-id c555609ffc5c
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True,host="0.0.0.0", port=8126)
