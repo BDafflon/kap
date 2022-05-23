@@ -76,7 +76,7 @@ useEffect(() => {
  <Editor
       value={text.value}
       onValueChange={code => setText({value: code})}
-      highlight={code => code!=""?hightlightWithLineNumbers(code, languages.js):""}
+      highlight={code => hightlightWithLineNumbers(code, languages.js)}
       padding={10}
       textareaId="codeArea"
       className="editor"
