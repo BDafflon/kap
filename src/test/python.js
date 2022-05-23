@@ -22,8 +22,9 @@ const [rep, setRep]= useState();
 const hightlightWithLineNumbers = (input, language) =>{
   console.log("hightlightWithLineNumbers",input,language)
   if(input==="") input="\n"
-  return highlight(input, language)
-    .split("\n")
+  var hcode =  highlight(input, language)
+    console.log("hcode",hcode)
+    return hcode.split("\n")
     .map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
     .join("\n");
 }
