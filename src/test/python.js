@@ -19,12 +19,13 @@ const [text, setText] = useState({value: '', caret: -1, target: null});
 const [updater,setUpdater]= useState(4);
 const [rep, setRep]= useState();
 
-const hightlightWithLineNumbers = (input, language) =>
-  highlight(input, language)
+const hightlightWithLineNumbers = (input, language) =>{
+  console.log("hightlightWithLineNumbers",input,language)
+  return highlight(input, language)
     .split("\n")
     .map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
     .join("\n");
-
+}
 useEffect(() => {
       if(text.caret >= 0){
         text.target.setSelectionRange(text.caret + spaces, text.caret + spaces);
