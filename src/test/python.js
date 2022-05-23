@@ -76,7 +76,7 @@ useEffect(() => {
  <Editor
       value={text.value}
       onValueChange={code => setText({value: code})}
-      highlight={code => hightlightWithLineNumbers(code, languages.js)}
+      highlight={code => code!=""?hightlightWithLineNumbers(code, languages.js):""}
       padding={10}
       textareaId="codeArea"
       className="editor"
@@ -97,7 +97,7 @@ useEffect(() => {
 Output :<br/> 
 <div style={{whiteSpace: "pre-wrap"}}>
 {
- rep!=undefined?<Alert severity={rep.reponse}>{rep.output}</Alert>:<></>
+ rep!=undefined&&rep.output!=null?<Alert severity={rep.reponse}>{rep.output}</Alert>:<></>
 }
 </div>
 
